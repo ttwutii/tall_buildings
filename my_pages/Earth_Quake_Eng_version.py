@@ -21,10 +21,12 @@ def img_show(name, caption='', width=True):
 
 # Title Translation
 st.title('DPT Standard 1301/1302-61: Seismic Design')
-
+st.divider()
+st.caption('### Input number of stories and details of the structure')
 col1, col2, col3 = st.columns([0.2, 0.4, 0.4])
 with col1:
     # Changed "จำนวนชั้น" -> "Number of Stories"
+    
     Floor = st.number_input(label='Number of Stories', min_value=1, max_value=80, value=4, step=1)
 
 with col2:

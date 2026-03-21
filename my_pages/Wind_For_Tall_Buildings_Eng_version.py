@@ -8,6 +8,7 @@ import altair as alt
 st.title('DPT Standard 1311-50: Wind Load for Tall Buildings')
 st.caption('### Calculation of Equivalent Static Wind Loads using the Detailed Procedure')
 
+st.divider()
 st.subheader("Criteria for Detailed Procedure")
 st.write("The detailed procedure shall be used if the structure meets any of the following:")
 
