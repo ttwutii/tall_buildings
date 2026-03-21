@@ -1,0 +1,431 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from scipy import interpolate
+from PIL import Image
+import plotly.graph_objects as go
+import sys
+
+# Set Page Config
+st.set_page_config(page_title='Seismic Design DPT', layout='wide', page_icon="🏗️")
+
+try:
+    import openpyxl  # Ensure this library is installed
+except ModuleNotFoundError:
+    st.error("The openpyxl library is not installed. Please install it using 'pip install openpyxl'.")
+    st.stop()
+
+def img_show(name, caption='', width=True):
+    image = Image.open(name) 
+    return st.image(image, use_column_width=width, caption=caption)
+
+# Title Translation
+st.title('DPT Standard 1301/1302-61: Seismic Design')
+
+col1, col2, col3 = st.columns([0.2, 0.4, 0.4])
+with col1:
+    # Changed "จำนวนชั้น" -> "Number of Stories"
+    Floor = st.number_input(label='Number of Stories', min_value=1, max_value=80, value=4, step=1)
+
+with col2:
+    # Changed "กำหนดความสูงแต่ละชั้น" -> "Define Story Heights"
+    with st.expander("Define Story Heights"):
+        Floor_list = []
+        H = 0
+        for i in range(Floor):
+            # Changed label to English
+            Heigth = st.number_input(label=r'$Story \quad %i \quad Height \quad (\mathrm{~m})$'%(i+1), min_value=0.0, value=3.0, step=0.1, key=f"floor{i}")
+            H = Heigth + H
+            Floor_list.append(H)
+
+with col3:
+    # Changed "กำหนดน้ำหนักแต่ละชั้น" -> "Define Story Weights"
+    with st.expander("Define Story Weights"):
+        Weight_list = []
+        Wi = 0
+        Witotal_list = []
+        Witotal = 0
+        for i in range(Floor):
+            # Changed label to English
+            Weight = st.number_input(label=r'$Story \quad %i \quad Weight \quad (\mathrm{~tonne})$'%(i+1), min_value=0.0, value=125.0, step=0.1, key=f"weight{i}")
+            
+            Witotal = Weight + Witotal
+            Witotal_list.append(Witotal)
+        
+            Wi = Weight
+            Weight_list.append(Wi)
+
+st.write('---')
+
+# Section 1: Importance Factor
+st.write('### 1. Importance Factor and Occupancy Category')
+important_dict = {
+    'Low': 1.0,      # น้อย
+    'Normal': 1.0,   # ปกติ
+    'High': 1.25,    # มาก
+    'Essential': 1.5 # สูงมาก
+}
+
+important = st.selectbox(label='Importance Category', options=list(important_dict.keys()), key='important')
+I = important_dict[important]
+st.write(r'Importance factor, $I = %.2f$'%(I))
+
+st.write('---')
+
+# Section 2: Analysis Procedure
+st.write('### 2. Structural Analysis Procedure')
+cal_list = ['Equivalent Static Procedure', 'Dynamic Analysis Procedure']
+cal = st.radio(label='Analysis Method', options=cal_list, index=0, key='cal', horizontal=True)
+
+st.write('### 3. Structural Details')
+col1, col2, col3 = st.columns(3)
+with col1:
+    structure_list = ['Reinforced Concrete', 'Steel Structure']
+    structure = st.radio(label='Structure Type', options=structure_list, index=0, key='structure')
+with col2:
+    if structure == structure_list[0]:
+        damping_list = ['5.0%', '2.5%']
+    else:
+        damping_list = ['2.5%']
+    damping = st.radio(label='Damping Ratio', options=damping_list, index=0, key='damping')
+
+st.write('---')
+
+# Section 4: Design Spectral Acceleration
+st.write('### 4. Design Spectral Response Acceleration')
+
+# Changed "ออกแบบในพื้นที่ในแอ่งกรุงเทพฯ" -> "Design in Bangkok Basin area?"
+bkk = st.checkbox('Design in Bangkok Basin area?', value=False, key='bkk')
+
+if not bkk:
+    df_SsS1 = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='SsS1')
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        province = st.selectbox(label='Province', options=df_SsS1['จังหวัด'].unique(), index=12, key='province')
+    with col2:
+        district = st.selectbox(label='District/Amphoe', options=df_SsS1.loc[df_SsS1['จังหวัด']==province, 'อำเภอ'], key='district')
+
+    Ss = df_SsS1.loc[(df_SsS1['จังหวัด']==province) & (df_SsS1['อำเภอ']==district), 'Ss'].iloc[0]
+    S1 = df_SsS1.loc[(df_SsS1['จังหวัด']==province) & (df_SsS1['อำเภอ']==district), 'S1'].iloc[0]
+
+    st.write(r'$S_{s} = %.3f \> g$'%(Ss))
+    st.write(r'$S_{1} = %.3f \> g$'%(S1))
+    
+    st.write('---')
+    st.write('### Site Class Adjustment (Soil Effect)')
+
+    soil_type = st.selectbox(label='Site Class (Soil Type)', options=['A','B','C','D','E'], index=0, key='soil_type')
+
+    def FaFv(df, S):
+        if S <= df['index'].min():
+            F = df[soil_type].iloc[0]
+        elif S >= df['index'].max():
+            F = df[soil_type].iloc[-1]
+        else:
+            y0 = df.loc[df['index'] <= S, soil_type].iloc[-1]
+            y1 = df.loc[df['index'] >= S, soil_type].iloc[0]
+            x0 = df.loc[df['index'] <= S, 'index'].iloc[-1]
+            x1 = df.loc[df['index'] >= S, 'index'].iloc[0]
+            f = interpolate.interp1d([x0, x1], [y0, y1])
+            F = f([S])[0]
+        return F
+
+    df_Fa = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='Fa')
+    df_Fa.set_index('ประเภทชั้นดิน', inplace=True)
+    df_Fa = df_Fa.T.reset_index().astype('float')
+
+    df_Fv = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='Fv')
+    df_Fv.set_index('ประเภทชั้นดิน', inplace=True)
+    df_Fv = df_Fv.T.reset_index().astype('float')
+
+    Fa = FaFv(df_Fa, Ss)
+    Fv = FaFv(df_Fv, S1)
+
+    st.write(r'$F_a = %.3f$'%(Fa))
+    st.write(r'$F_v = %.3f$'%(Fv))
+
+    SMS = Fa * Ss
+    SM1 = Fv * S1
+
+    st.write(r'$S_{MS} = F_{a} S_{s} = %.3f \times %.3f = %.3f \> g$'%(Fa, Ss, SMS))
+    st.write(r'$S_{M1} = F_{v} S_{1} = %.3f \times %.3f = %.3f \> g$'%(Fv, S1, SM1))
+
+    st.write('---')
+    st.write('### Design Earthquake Parameters')
+
+    SDS = (2/3) * SMS
+    SD1 = (2/3) * SM1
+
+    st.write(r'$S_{DS} = \frac{2}{3} S_{MS} = \frac{2}{3} \times %.3f = %.3f \> g$'%(SMS, SDS))
+    st.write(r'$S_{D1} = \frac{2}{3} S_{M1} = \frac{2}{3} \times %.3f = %.3f \> g$'%(SM1, SD1))
+    
+else:
+    # Bangkok Basin Logic
+    with (st.expander('Bangkok Basin Zone Map')):
+        img_show('eq_bkk_zone.png')
+    
+    zone = st.selectbox(label='Zone', options=np.arange(1, 11), key='zone')
+    
+    if cal == cal_list[0]:
+        sheet_name_ = 'bkk_equivalent'
+    else:
+        sheet_name_ = 'bkk_rsa'
+        
+    if damping == '5.0%':
+        sheet_name = sheet_name_ + '_5.0'
+    else:
+        sheet_name = sheet_name_ + '_2.5'
+    
+    df_bkk = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name=sheet_name)
+    col = df_bkk.columns
+    df_bkk = pd.melt(df_bkk, id_vars=col[0], value_vars=col[1:], var_name='T', value_name='Sa').astype('float')
+    
+    SDS = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']==0.2), 'Sa'].iloc[0]
+    SD1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']==1.0), 'Sa'].iloc[0]
+    
+    st.write(r'$S_{DS} = %.3f \> g$'%(SDS))
+    st.write(r'$S_{D1} = %.3f \> g$'%(SD1))
+
+# Section 5: Fundamental Period
+st.write('### 5. Approximate Fundamental Period ($T_a$)')
+if structure == structure_list[0]:
+    T_structure = 0.02 * H
+    st.write('Structure:', structure, r'$\qquad T = 0.02H = 0.02 \times %.2f \mathrm{~m} = %.3f \mathrm{~sec}$'%(H, T_structure))
+else:
+    T_structure = 0.03 * H
+    st.write('Structure:', structure, r'$\qquad T = 0.03H = 0.03 \times %.2f \mathrm{~m} = %.3f \mathrm{~sec}$'%(H, T_structure))
+
+st.write('---')
+    
+# Section 6: Seismic Design Category
+st.write('### 6. Seismic Design Category (SDC)')
+st.info('The SDC classification based on $S_{DS}$ and $S_{D1}$ is determined considering a 5% damping ratio for all building types.')
+
+type_dict = {'1': 'A', '2': 'B', '3': 'C', '4': 'D'} # ก, ข, ค, ง -> A, B, C, D
+
+def type161162TS(SDS, SD1):
+    # Manual mapping for importance category names in Excel
+    imp_map = {'Low': 'น้อย', 'Normal': 'ปกติ', 'High': 'มาก', 'Essential': 'สูงมาก'}
+    thai_imp = imp_map[important]
+    
+    df = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='T1.6-1')
+    df = pd.melt(df, id_vars=['min','max'], value_vars=['น้อย','ปกติ','มาก','สูงมาก'], var_name='important', value_name='type')
+    type161 = df.loc[(df['min']<=SDS) & (df['max']>SDS) & (df['important']==thai_imp), 'type'].iloc[0]
+
+    df = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='T1.6-2')
+    df = pd.melt(df, id_vars=['min','max'], value_vars=['น้อย','ปกติ','มาก','สูงมาก'], var_name='important', value_name='type')
+    type162 = df.loc[(df['min']<=SD1) & (df['max']>SD1) & (df['important']==thai_imp), 'type'].iloc[0]
+    
+    TS = SD1/SDS if SD1 <= SDS else 1.0
+    return type161, type162, TS
+
+if bkk and damping=='2.5%':
+    df_bkkx = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name=sheet_name_ + '_5.0')
+    colx = df_bkkx.columns
+    df_bkkx = pd.melt(df_bkkx, id_vars=col[0], value_vars=col[1:], var_name='T', value_name='Sa').astype('float')
+    SDSx = df_bkkx.loc[(df_bkkx['zone']==zone) & (df_bkkx['T']==0.2), 'Sa'].iloc[0]
+    SD1x = df_bkkx.loc[(df_bkkx['zone']==zone) & (df_bkkx['T']==1.0), 'Sa'].iloc[0]
+    st.write('For 5% Damping ratio reference:')
+    st.write(r'$S_{DS} = %.3f \> g, \quad S_{D1} = %.3f \> g$'%(SDSx, SD1x))
+    type161, type162, TTSS = type161162TS(SDSx, SD1x)
+else:
+    type161, type162, TTSS = type161162TS(SDS, SD1)
+    
+if not bkk:
+    if T_structure < 0.8 * TTSS:
+        st.write(r'As $T = %.3f \mathrm{~s} < 0.8 T_s = %.3f \mathrm{~s}$'%(T_structure, 0.8*TTSS))
+        st.write('SDC determined by Table 1.6-1 only.')
+        type_num = type161
+    else:
+        st.write(r'As $T = %.3f \mathrm{~s} \ge 0.8 T_s = %.3f \mathrm{~s}$'%(T_structure, 0.8*TTSS))
+        st.write('SDC determined by the most stringent of Table 1.6-1 and 1.6-2.')
+        type_num = max(type161, type162)
+else:
+    if T_structure <= 0.5:
+        st.write(r'As $T = %.3f \mathrm{~s} \le 0.5 \mathrm{~s}$'%(T_structure))
+        st.write('SDC determined by Table 1.6-1 only.')
+        type_num = type161
+    else:
+        st.write(r'As $T = %.3f \mathrm{~s} > 0.5 \mathrm{~s}$'%(T_structure))
+        st.write('SDC determined by Table 1.6-2 only.')
+        type_num = type162
+
+final_type = type_dict[str(type_num)]
+st.write(r'Seismic Design Category: <span style="color:red">**Category %s**</span>'%(final_type), unsafe_allow_html=True)
+st.write('---')    
+
+# Section 7: Structural System Factors
+st.write('### 7. Structural System Factors')
+col1, col2, col3 = st.columns(3)
+with col1:
+    R = st.number_input(label='Response Modification Factor, $R$', min_value=0.0, value=8.0, key='R')
+with col2:
+    omega0 = st.number_input(label='System Overstrength Factor, $\Omega_0$', min_value=0.0, value=3.0, key='omega0')
+with col3:
+    Cd = st.number_input(label='Deflection Amplification Factor, $C_d$', min_value=0.0, value=5.5, key='Cd')
+
+st.write('---')
+
+# Section 8: Design Response Spectrum
+st.write('### 8. Design Response Spectrum Acceleration, $S_a$')
+
+# [Graph Data Logic - Remained the same but with English variables/comments]
+if not bkk:
+    if cal == cal_list[0]: # Equivalent Static
+        if SD1 <= SDS:
+            T0, Ts = 0.0, SD1/SDS
+            T_data = np.append([T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
+            S_data = np.array([SDS, SDS])
+            for T in T_data:
+                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            Sa_structure = SDS if T_structure <= Ts else SD1/T_structure
+        else:
+            T0, Ts = 0.2, 1.0
+            T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
+            S_data = np.array([SDS, SDS, SD1])
+            for T in T_data:
+                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            if T_structure <= T0: Sa_structure = SDS
+            elif T_structure <= Ts:
+                f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
+            else: Sa_structure = SD1/T_structure
+
+    elif cal == cal_list[1]: # Dynamic
+        if SD1 <= SDS:
+            T0, Ts = 0.2*SD1/SDS, SD1/SDS
+            T_data = np.append([0,T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
+            S_data = np.array([0.4*SDS, SDS, SDS])
+            for T in T_data:
+                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            if T_structure <= T0:
+                f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+            elif T_structure <= Ts: Sa_structure = SDS
+            else: Sa_structure = SD1/T_structure
+        else:
+            T0, Ts = 0.2, 1.0
+            T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
+            S_data = np.array([0.4*SDS, SDS, SD1])
+            for T in T_data:
+                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            if T_structure <= T0:
+                f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+            elif T_structure <= Ts:
+                f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
+            else: Sa_structure = SD1/T_structure
+
+    if damping == '2.5%':
+        for i in range(len(T_data)):
+            if T_data[i] >= T0: S_data[i] /= 0.85
+            else: S_data[i] = SDS*(3.88*T_data[i]/Ts + 0.4)
+        Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
+    
+elif bkk:
+    T_data = df_bkk.loc[df_bkk['zone']==zone, 'T']
+    S_data = df_bkk.loc[df_bkk['zone']==zone, 'Sa']
+    y0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_structure), :].iloc[-1]['Sa']
+    y1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_structure), :].iloc[0]['Sa']
+    x0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_structure), :].iloc[-1]['T']
+    x1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_structure), :].iloc[0]['T']
+    f = interpolate.interp1d([np.log10(x0), np.log10(x1)], [np.log10(y0), np.log10(y1)])
+    Sa_structure = 10**f([np.log10(T_structure)])[0]
+
+# Plotting Function
+def response_spectrum_plot(T_data, S_data):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=T_data, y=S_data, mode='lines+markers', line=dict(color='blue', width=2), showlegend=False, hoverinfo='skip'))
+    
+    # Horizontal/Vertical Indicators
+    fig.add_trace(go.Scatter(x=[min(T_data), T_structure], y=[Sa_structure, Sa_structure], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
+    
+    ann_x = np.log10(min(T_data)) if bkk else min(T_data)
+    fig.add_annotation(x=ann_x, y=Sa_structure, text=r'%.3f'%(Sa_structure), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
+    
+    fig.add_trace(go.Scatter(x=[T_structure, T_structure], y=[0.0, Sa_structure], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
+    
+    ann_tx = np.log10(T_structure) if bkk else T_structure
+    ann_ty = np.log10(0.01) if bkk else 0.0
+    fig.add_annotation(x=ann_tx, y=ann_ty, text=r'%.3f'%(T_structure), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
+    
+    fig.add_trace(go.Scatter(x=[T_structure], y=[Sa_structure], mode='markers', marker=dict(color='red', size=8), showlegend=False, hoverinfo='skip'))
+    
+    fig.update_layout(
+        xaxis=dict(title='T (second)', fixedrange=True, range=[0.0, 2.0], rangemode="nonnegative"),
+        yaxis=dict(title='Sa (g)', fixedrange=True, range=[0.0, max(S_data)+0.05], rangemode="nonnegative"),
+        margin=dict(t=20, b=40), height=300
+    )
+    if bkk:
+        fig.update_xaxes(range=[np.log10(0.01), np.log10(10)], type="log")
+        fig.update_yaxes(range=[np.log10(0.01), np.log10(1)], type="log")
+    return fig
+
+col1, col2 = st.columns([0.7, 0.3])
+with col1:
+    st.plotly_chart(response_spectrum_plot(T_data, S_data), theme=None, use_container_width=True)
+    st.write(r'Period of structure, $T = %.3f \mathrm{~sec}$'%(T_structure))
+    st.write(r'Acceleration of structure, $S_a = %.3f \mathrm{~g}$'%(Sa_structure))
+
+st.write('---')
+
+# # Section 9: Base Shear
+# st.write('### 9. Base Shear, $V$')
+# W = Witotal_list[-1]
+# st.markdown(r'$Effective \> Seismic \> Weight, W = %.2f \mathrm{~tonne} $'%(W))
+
+# st.write('**Seismic Response Coefficient, $C_s$**')
+# Cs_ = Sa_structure * I / R
+# Cs = max(Cs_, 0.01)
+
+# st.markdown(r'$C_s = S_a \left( \frac{I}{R} \right) \qquad\qquad \ge \qquad 0.01$')
+# st.markdown(r'$\quad\>\> = %.3f \left( \frac{%.2f}{%.2f} \right) \qquad\>\> \ge \qquad 0.01$'%(Sa_structure, I, R))
+# st.markdown(r'$\quad\>\> = %.3f \qquad\qquad\quad \ge \qquad 0.01$'%(Cs_))
+# st.markdown(r'$\quad\>\> = %.3f$'%(Cs))
+
+# st.write('**Total Design Base Shear**')
+# V = Cs * W
+# st.markdown(r'$V = C_s W$')
+# st.markdown(r'$\quad = %.3f \mathrm{~g} \times %.2f \mathrm{~tonne}$'%(Cs, W))
+# st.markdown(r'$\quad = %.2f \mathrm{~tonne}$'%(V))
+
+# st.write('---')
+
+# # Section 10: Vertical Distribution
+# st.write('### 10. Vertical Distribution of Seismic Forces')
+
+# st.write('**Vertical Distribution Exponent ($k$)**')
+# if T_structure <= 0.5:
+#     k = 1.0
+#     st.write(r'For $\qquad T \le 0.5 \mathrm{~sec}, \qquad k = 1.0$')
+# elif T_structure >= 2.5:
+#     k = 2.0
+#     st.write(r'For $\qquad T \ge 2.5 \mathrm{~sec}, \qquad k = 2.0$')
+# else:
+#     k = 1 + (T_structure-0.5)/2
+#     st.write(r'For $\qquad 0.5 \mathrm{~sec} < T < 2.5 \mathrm{~sec}, \qquad k = 1 + \frac{T-0.5}{2} = %.2f $'%(k))
+
+# st.write('**Vertical Distribution Factor ($C_{vx}$)**')
+# st.write(r'$C_{v x} = \frac{w_x h_x^k}{\sum_{i=1}^{n} w_i h_i^k}$')
+
+# st.write('**Lateral Force at Each Level**')
+# st.write(r'$F_x = C_{v x} V$')
+
+# st.write('---')
+# st.write(r'### $Lateral ~ Force ~ and ~ Shear ~ Table$')
+
+# # Table Calculation
+# floors = pd.DataFrame({'Story': []})
+# for i in range(Floor): floors.loc[i+1] = i+1
+
+# eq = pd.DataFrame(floors)
+# eq['Wx [tonne]'] = Weight_list
+# eq['hx [m]'] = Floor_list 
+# wihxk = eq['Wx [tonne]'] * (eq['hx [m]']**k)
+# eq['Wxhx^k'] = wihxk
+# eq['Cvx'] = wihxk / wihxk.sum()
+# eq['Fx [tonne]'] = eq['Cvx'] * V
+# eq['Fx [tonne]'] = eq['Fx [tonne]'].round(2)
+# eq = eq.sort_index(ascending=False)
+# eq['Vx [tonne]'] = eq['Fx [tonne]'].cumsum()
+
+# # Final Dataframe Display
+# st.dataframe(eq, hide_index=True, use_container_width=True)

@@ -1,0 +1,28 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+# ป้องกันไม่ให้ Library ในโฟลเดอร์ st_cmu ขึ้นไปรก GitHub
+st_cmu/Lib/
+st_cmu/Scripts/
+st_cmu/Include/
+
+# --- Streamlit ---
+.streamlit/
+
+# --- Operating System ---
+.DS_Store
+Thumbs.db
+
+# --- IDE (Visual Studio Code) ---
+.vscode/
+.history/
+
+# --- Structural Engineering / Data (Optional) ---
+# หากมีไฟล์ Excel หรือข้อมูลขนาดใหญ่ที่ไม่ได้ใช้รันเว็บ ให้ใส่ชื่อที่นี่
+# *.xlsx
+# *.csv
