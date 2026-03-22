@@ -258,17 +258,131 @@ st.write("---")
 # ==========================================
 # 8. Serviceability Check (อัตราเร่งและการโก่งตัว)
 # ==========================================
+# ==========================================
+# 8. Serviceability Check (Deflection & Acceleration)
+# ==========================================
+st.write('### 9. Lateral Deflection and Building Motion (Serviceability Check)')
 
-st.write('### 9. Serviceability Check')
-rho_B = st.number_input("Average Building Density $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
+col1, col2 = st.columns([1, 3])
+with col1:
+    rho_B = st.number_input("Average density of the building, $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
+with col2:
+    st.info("💡 **Reference: DPT Standard 1311-50 (Section 3.7):**\n\n"
+            "**$\\rho_B$ (Average density of the building)** is the total mass of the building divided by the enclosed volume ($Volume = W \\times D \\times H$). "
+            "Generally, it ranges between **150 - 300 kg/m³**.")
 
-# Check X-axis
-alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72)
+# Calculate deflection and acceleration (checking X-axis as an example)
+alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72) # Power law exponent for Ce
 Delta_x = (3 * (H**2 / (2 + alpha)) * 0.75 * q * Ce_H * (C_px_wind - C_px_lee)) / (4 * math.pi**2 * n_D**2 * Wx * rho_B * H**2)
 a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
 
 st.markdown(f'''
-- **Top Drift X-axis ($\Delta_x$)**: `{Delta_x:.4f}` m (Limit = {H/500:.4f} m)
-  - {"✅ **Passed**" if Delta_x <= H/500 else "❌ **Failed**"}
-- **Peak Acceleration X-axis ($a_D$)**: `{a_Dx:.4f}` m/s² (Limit = 0.15 m/s² for Residential, 0.25 m/s² for Commercial)
+- **Maximum lateral deflection at the top, X-axis ($\\Delta_x$)**: `{Delta_x:.4f}` m (Allowable limit = $H/500$ = {H/500:.4f} m) 
+  - {"✅ **Pass**" if Delta_x <= H/500 else "❌ **Fail**"}
+- **Maximum peak acceleration, X-axis ($a_D$)**: `{a_Dx:.4f}` m/s² 
+  - *(Allowable limit = 0.15 m/s² for residential buildings, 0.25 m/s² for commercial buildings)* 
 ''')
+
+st.write("---")
+
+# ---------------------------------------------------------
+# Equation Details Expanders
+# ---------------------------------------------------------
+st.markdown("####  Equation Details from DPT Standard 1311-50")
+
+with st.expander(" View Lateral Deflection Equation Details"):
+    st.markdown("""
+    **The maximum lateral deflection at the top of the building ($\\Delta$)** under equivalent static wind load can be estimated using Equation (3-12):
+    """)
+    st.latex(r"\Delta = \frac{3 \left( \frac{H^2}{2+\alpha} \right) I_w q C_{eH} C_p}{4 \pi^2 n_D^2 D \rho_B H^2}")
+    st.markdown("""
+    **Where:**
+    * $I_w$ = Importance factor for wind load in serviceability limit state (use 0.75) 
+    * $q$ = Reference velocity pressure ($q_H$)
+    * $C_{eH}$ = Exposure factor at the building height 
+    * $C_p$ = External pressure coefficient for windward and leeward walls combined (e.g., $0.8 - (-0.5) = 1.3$) 
+    * $\\alpha$ = Power law exponent for the exposure factor 
+    * $D$ = Depth of the building parallel to the wind direction 
+    * $\\rho_B$ = Average density of the building 
+    * $n_D$ = Natural frequency of the building
+    * $H$ = Building height
+    
+    *Note: The total lateral deflection at the top must not exceed 1/500 of the building height.*
+    """)
+
+with st.expander(" View Building Motion (Acceleration) Equation Details"):
+    st.markdown("""
+    **The maximum along-wind peak acceleration at the top of the building ($a_D$)** in m/s² can be estimated using Equation (3-13):
+    """)
+    st.latex(r"a_D = 4 \pi^2 n_D^2 g_p \sqrt{\frac{K s F}{C_{eH} \beta_D}} \cdot \frac{\Delta}{C_g}")
+    st.markdown("""
+    **Where:**
+    * $g_p$ = Peak factor
+    * $K$ = Coefficient depending on terrain roughness
+    * $s$ = Size reduction factor
+    * $F$ = Gust energy ratio at the natural frequency
+    * $\\beta_D$ = Damping ratio in the along-wind direction 
+    * $\Delta$ = Maximum lateral deflection at the top 
+    * $C_g$ = Gust effect factor 
+    
+    *Note: To prevent occupant discomfort, the peak acceleration must not exceed 0.15 m/s² for residential buildings or 0.25 m/s² for commercial buildings.*
+    """)
+# st.write('### 9. Serviceability Check')
+# col1, col2 = st.columns([1, 1.5]) # ปรับขนาดคอลัมน์ให้กล่องคำอธิบายกว้างขึ้นเล็กน้อย
+# with col1:
+#     rho_B = st.number_input("ความหนาแน่นเฉลี่ยมวลอาคาร $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
+# with col2:
+#     # เพิ่มที่มาและอ้างอิงตาม มยผ.1311-50 หัวข้อ 3.7
+#     st.info("💡 **อ้างอิง มยผ.1311-50 (หัวข้อ 3.7):**\n\n"
+#             "**$\\rho_B$ (Average density of the building)** คือ ค่ามวลทั้งหมดของอาคาร หารด้วยปริมาตรของอาคารที่ถูกห่อหุ้มด้วยพื้นผิวภายนอกอาคาร ($Volume = W \\times D \\times H$) "
+#             "โดยทั่วไปอาคารจะมีค่าความหนาแน่นมวลอยู่ระหว่าง **150 - 300 kg/m³**")
+# # Check X-axis
+# alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72)
+# Delta_x = (3 * (H**2 / (2 + alpha)) * 0.75 * q * Ce_H * (C_px_wind - C_px_lee)) / (4 * math.pi**2 * n_D**2 * Wx * rho_B * H**2)
+# a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
+
+# st.markdown(f'''
+# - **Top Drift X-axis ($\Delta_x$)**: `{Delta_x:.4f}` m (Limit = {H/500:.4f} m)
+#   - {"✅ **Passed**" if Delta_x <= H/500 else "❌ **Failed**"}
+# - **Peak Acceleration X-axis 
+# ($a_D$)**: `{a_Dx:.4f}` m/s² (Limit = 0.15 m/s² for Residential, 0.25 m/s² for Commercial)
+# ''')
+# st.markdown("#### 📚 รายละเอียดสมการอ้างอิงตามมาตรฐาน มยผ.1311-50")
+
+# with st.expander("📖 ดูรายละเอียดสมการการโก่งตัวด้านข้าง (Lateral Deflection)"):
+#     st.markdown("""
+#     **การโก่งตัวด้านข้างสูงสุดในทิศทางแนวราบ ณ ยอดอาคาร ($\Delta$)** ภายใต้แรงลมสถิตเทียบเท่า สามารถคำนวณโดยประมาณได้จากสมการ (3-12):
+#     """)
+#     st.latex(r"\Delta = \frac{3 \left( \frac{H^2}{2+\alpha} \right) I_w q C_{eH} C_p}{4 \pi^2 n_D^2 D \rho_B H^2}")
+#     st.markdown("""
+#     **โดยที่ตัวแปรคือ:**
+#     * $I_w$ = ค่าประกอบความสำคัญของแรงลมในสภาวะจำกัดด้านการใช้งาน (กำหนดให้ใช้ 0.75 สำหรับตรวจสอบระยะโก่ง)
+#     * $q$ = หน่วยแรงลมอ้างอิงเนื่องจากความเร็วลม ($q_H$)
+#     * $C_{eH}$ = ค่าประกอบเนื่องจากสภาพภูมิประเทศที่ระดับยอดอาคาร
+#     * $C_p$ = ค่าสัมประสิทธิ์ของหน่วยแรงลมด้านต้นลมและท้ายลมรวมกัน (ตัวอย่างเช่น $0.8 - (-0.5) = 1.3$)
+#     * $\\alpha$ = ตัวยกกำลังของค่าประกอบเนื่องจากสภาพภูมิประเทศ
+#     * $D$ = ความลึกของอาคารในทิศทางขนานกับทิศทางลม
+#     * $\\rho_B$ = ความหนาแน่นเฉลี่ยของมวลอาคาร
+#     * $n_D$ = ความถี่ธรรมชาติของอาคาร
+#     * $H$ = ความสูงของอาคาร
+    
+#     *หมายเหตุ: ระยะโก่งตัวทั้งหมดที่เกิดขึ้น ณ ยอดอาคาร จะต้องไม่เกิน $1/500$ ของความสูงของอาคาร*
+#     """)
+
+# with st.expander("📖 ดูรายละเอียดสมการการสั่นไหวของอาคาร (Building Motion)"):
+#     st.markdown("""
+#     **อัตราเร่งสูงสุดในแนวราบที่ยอดอาคารในทิศทางลม ($a_D$)** มีหน่วยเป็น เมตร/วินาที² สามารถคำนวณโดยประมาณได้จากสมการ (3-13):
+#     """)
+#     st.latex(r"a_D = 4 \pi^2 n_D^2 g_p \sqrt{\frac{K s F}{C_{eH} \beta_D}} \cdot \frac{\Delta}{C_g}")
+#     st.markdown("""
+#     **โดยที่ตัวแปรเพิ่มเติมคือ:**
+#     * $g_p$ = ค่าประกอบเชิงสถิติเพื่อปรับค่ารากกำลังสองเฉลี่ยให้เป็นค่าสูงสุด
+#     * $K$ = ค่าสัมประสิทธิ์ที่มีค่าแปรเปลี่ยนไปตามความขรุขระของสภาพภูมิประเทศ
+#     * $s$ = ตัวคูณลดเนื่องจากขนาดของอาคาร (Size reduction factor)
+#     * $F$ = อัตราส่วนพลังงานของการแปรปรวนของลม ณ ความถี่ธรรมชาติของอาคาร
+#     * $\\beta_D$ = อัตราส่วนความหน่วง (Damping ratio) ของการสั่นไหวในทิศทางลม
+#     * $\Delta$ = การโก่งตัวด้านข้าง ณ ยอดอาคารที่คำนวณได้
+#     * $C_g$ = ค่าประกอบเนื่องจากการกระโชกของลม (Gust effect factor)
+    
+#     *หมายเหตุ: เพื่อไม่ให้ผู้ใช้อาคารรู้สึกไม่สบาย อัตราเร่งสูงสุดจะต้องมีค่าไม่เกิน 0.15 m/s² สำหรับอาคารที่พักอาศัย หรือ 0.25 m/s² สำหรับอาคารพาณิชย์*
+#     """)
