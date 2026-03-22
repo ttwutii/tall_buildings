@@ -7,7 +7,7 @@ import pandas as pd
 # --- Page Configuration ---
 st.set_page_config(page_title="Thai Structural Design Code (B.E. 2566)", layout="wide")
 
-st.title("🏗️ Comprehensive Structural Design Calculator")
+st.title("🏗️ Load Combinations & Design Guidelines")
 st.subheader("Based on Ministerial Regulation B.E. 2566 (2023)")
 st.markdown("---")
 
