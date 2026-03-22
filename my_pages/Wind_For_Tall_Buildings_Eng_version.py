@@ -15,33 +15,91 @@ st.write("The detailed procedure shall be used if the structure meets any of the
 st.markdown("- **a) Building height** $H > 80$ m or $H > 3W$ (where $W$ is the width of the building).")
 st.markdown("- **b) Flexible structures** with low natural frequency and low damping properties.")
 
+st.write("---")
 # ==========================================
-# 1. Building Dimensions (มิติอาคาร)
+# 1. Building Dimensions & Story Data
 # ==========================================
-
 inputs = st.container()
 with inputs:
-    st.write('### 1. Building Dimensions')
-    col1, col2, col3 = st.columns([0.4, 0.2, 0.4])
-    with col2:
-        Floor = st.number_input(label='Number of Stories', min_value=1, max_value=100, value=10, step=1)
+    st.write('### 1. Building Dimensions & Story Data')
+    col1, col2 = st.columns([0.3, 0.7]) 
     
-    with col3:
-        Floor_list = []
-        H = 0
-        with st.expander("Define Story Heights (Default = 3m each)"):
-            for i in range(Floor):
-                # แปลป้ายกำกับความสูงแต่ละชั้น
-                Heigth = st.number_input(label=f'Story Height {i+1} [m]', min_value=0.0, value=3.0, step=0.1, key=f"floor{i}")
-                H += Heigth
-                Floor_list.append(H)
-        st.info(f"Total Height (H) = {H:.2f} m")
-
     with col1:
+        Floor = st.number_input(label='Number of Stories', min_value=1, max_value=100, value=10, step=1)
         Wx = st.number_input(label='Width parallel to X-axis [m]', min_value=0.0, value=20.0, step=0.1)
         Wy = st.number_input(label='Width parallel to Y-axis [m]', min_value=0.0, value=20.0, step=0.1)
         Ds = min(Wy, Wx)
-        st.write(f'Minimum Building Width, $D_s={Ds:.2f}$ m')
+        st.write(f'Narrowest effective width, $D_s = {Ds:.2f}$ m')
+        
+    with col2:
+        st.write("#### Define Story Data")
+        st.caption("You can edit the numbers directly in the table or copy/paste from Excel.")
+        
+        # Initialize default dataframe
+        init_data = pd.DataFrame({
+            "Story": [i+1 for i in range(int(Floor))],
+            "Height (m)": [3.0] * int(Floor),
+            "Weight (tonne)": [125.0] * int(Floor) 
+        })
+        
+        # Display data editor
+        edited_df = st.data_editor(init_data, use_container_width=True, hide_index=True)
+        
+        # --- Data Processing ---
+        heights = edited_df["Height (m)"].tolist()
+        Floor_list = []
+        current_h = 0
+        for h in heights:
+            current_h += h
+            Floor_list.append(current_h)
+            
+        H = current_h
+        
+        # Calculate Average Building Density (rho_B) [cite: 220]
+        total_weight_tonne = edited_df["Weight (tonne)"].sum()
+        total_mass_kg = total_weight_tonne * 1000
+        volume = Wx * Wy * H
+        
+        if volume > 0:
+            rho_B = total_mass_kg / volume
+        else:
+            rho_B = 0
+        
+        # Display Summary
+        col2_1, col2_2, col2_3 = st.columns(3)
+        col2_2.info(f"Total Height, $H = {H:.2f}$ m")
+        col2_3.info(f"Total Weight = {total_weight_tonne:,.2f} tonnes")
+        col2_3.info(f"Building Density, $\\rho_B = {rho_B:,.2f}$ kg/m³")
+
+
+
+# # ==========================================
+# # 1. Building Dimensions (มิติอาคาร)
+# # ==========================================
+
+# inputs = st.container()
+# with inputs:
+#     st.write('### 1. Building Dimensions')
+#     col1, col2, col3 = st.columns([0.4, 0.2, 0.4])
+#     with col2:
+#         Floor = st.number_input(label='Number of Stories', min_value=1, max_value=100, value=10, step=1)
+    
+#     with col3:
+#         Floor_list = []
+#         H = 0
+#         with st.expander("Define Story Heights (Default = 3m each)"):
+#             for i in range(Floor):
+#                 # แปลป้ายกำกับความสูงแต่ละชั้น
+#                 Heigth = st.number_input(label=f'Story Height {i+1} [m]', min_value=0.0, value=3.0, step=0.1, key=f"floor{i}")
+#                 H += Heigth
+#                 Floor_list.append(H)
+#         st.info(f"Total Height (H) = {H:.2f} m")
+
+#     with col1:
+#         Wx = st.number_input(label='Width parallel to X-axis [m]', min_value=0.0, value=20.0, step=0.1)
+#         Wy = st.number_input(label='Width parallel to Y-axis [m]', min_value=0.0, value=20.0, step=0.1)
+#         Ds = min(Wy, Wx)
+#         st.write(f'Minimum Building Width, $D_s={Ds:.2f}$ m')
 
 st.write("---")
 
