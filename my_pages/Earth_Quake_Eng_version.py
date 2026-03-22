@@ -292,35 +292,83 @@ if not bkk:
             elif T_structure <= Ts:
                 f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
             else: Sa_structure = SD1/T_structure
-
     elif cal == cal_list[1]: # Dynamic
         if SD1 <= SDS:
             T0, Ts = 0.2*SD1/SDS, SD1/SDS
-            T_data = np.append([0,T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
-            S_data = np.array([0.4*SDS, SDS, SDS])
-            for T in T_data:
-                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            T_data = np.append([0, T0, Ts], np.arange(round(Ts, 1) + 0.1, 2.1, 0.1))
+            T_data = np.unique(np.sort(T_data)) # จัดระเบียบค่า T
+            
+            # สร้าง S_data ให้ขนาดเท่า T_data ทันที
+            S_data = np.zeros_like(T_data)
+            for i, T in enumerate(T_data):
+                if T <= T0: S_data[i] = 0.4*SDS + (SDS - 0.4*SDS) * (T/T0) # เส้นลาดช่วงแรก
+                elif T <= Ts: S_data[i] = SDS # ช่วงราบ (Plateau)
+                else: S_data[i] = SD1/T # ช่วงโค้งตามคาบ
+                
+            # คำนวณค่าเฉพาะจุด T_structure
             if T_structure <= T0:
-                f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+                f = interpolate.interp1d([0.0, T0], [0.4*SDS, SDS]); Sa_structure = f(T_structure)
             elif T_structure <= Ts: Sa_structure = SDS
             else: Sa_structure = SD1/T_structure
-        else:
+        
+        else: # กรณี SD1 > SDS
             T0, Ts = 0.2, 1.0
-            T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
-            S_data = np.array([0.4*SDS, SDS, SD1])
-            for T in T_data:
-                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            T_data = np.append([0, T0, Ts], np.arange(1.1, 2.1, 0.1))
+            T_data = np.unique(np.sort(T_data))
+            
+            S_data = np.zeros_like(T_data)
+            for i, T in enumerate(T_data):
+                if T <= T0: S_data[i] = 0.4*SDS + (SDS - 0.4*SDS) * (T/T0)
+                elif T <= Ts: 
+                    f_interp = interpolate.interp1d([T0, Ts], [SDS, SD1])
+                    S_data[i] = f_interp(T)
+                else: S_data[i] = SD1/T
+                
             if T_structure <= T0:
-                f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+                f = interpolate.interp1d([0.0, T0], [0.4*SDS, SDS]); Sa_structure = f(T_structure)
             elif T_structure <= Ts:
-                f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
+                f = interpolate.interp1d([T0, Ts], [SDS, SD1]); Sa_structure = f(T_structure)
             else: Sa_structure = SD1/T_structure
 
-    if damping == '2.5%':
-        for i in range(len(T_data)):
-            if T_data[i] >= T0: S_data[i] /= 0.85
-            else: S_data[i] = SDS*(3.88*T_data[i]/Ts + 0.4)
-        Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
+# ส่วนการปรับ damping 2.5% (ตอนนี้ S_data กับ T_data ยาวเท่ากันแล้ว จะไม่ error)
+if damping == '2.5%':
+    for i in range(len(T_data)):
+        if T_data[i] >= T0: 
+            S_data[i] /= 0.85
+        else: 
+            # สูตร Sa ช่วง T < T0 สำหรับ damping 2.5%
+            S_data[i] = SDS * (3.88 * T_data[i] / Ts + 0.4)
+    
+    Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
+
+    # elif cal == cal_list[1]: # Dynamic
+    #     if SD1 <= SDS:
+    #         T0, Ts = 0.2*SD1/SDS, SD1/SDS
+    #         T_data = np.append([0,T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
+    #         S_data = np.array([0.4*SDS, SDS, SDS])
+    #         for T in T_data:
+    #             if T > Ts: S_data = np.append(S_data, [SD1/T])
+    #         if T_structure <= T0:
+    #             f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+    #         elif T_structure <= Ts: Sa_structure = SDS
+    #         else: Sa_structure = SD1/T_structure
+    #     else:
+    #         T0, Ts = 0.2, 1.0
+    #         T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
+    #         S_data = np.array([0.4*SDS, SDS, SD1])
+    #         for T in T_data:
+    #             if T > Ts: S_data = np.append(S_data, [SD1/T])
+    #         if T_structure <= T0:
+    #             f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
+    #         elif T_structure <= Ts:
+    #             f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
+    #         else: Sa_structure = SD1/T_structure
+
+    # if damping == '2.5%':
+    #     for i in range(len(T_data)):
+    #         if T_data[i] >= T0: S_data[i] /= 0.85
+    #         else: S_data[i] = SDS*(3.88*T_data[i]/Ts + 0.4)
+    #     Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
     
 elif bkk:
     T_data = df_bkk.loc[df_bkk['zone']==zone, 'T']
