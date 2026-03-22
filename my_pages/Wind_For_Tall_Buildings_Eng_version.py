@@ -38,7 +38,7 @@ with inputs:
         # Initialize default dataframe
         init_data = pd.DataFrame({
             "Story": [i+1 for i in range(int(Floor))],
-            "Height (m)": [3.0] * int(Floor),
+            "Height (m)": [4.0] * int(Floor),
             "Weight (tonne)": [125.0] * int(Floor) 
         })
         
@@ -299,6 +299,7 @@ st.write("---")
 # 7. Net Wind Pressure (Updated Reference Heights for Ce based on Note 5)
 # ==========================================
 st.markdown('### 8. Net Wind Pressure ($P_{net}$)')
+st.markdown('$P_{net}=I_w q C_e C_g C_p - I_w q C_e C_{gi} C_{pi}$')
 
 # Calculate Reference Ce according to the specifications 
 Ce_05H = calculate_Ce(0.5 * H, terrain_type) # For Leeward and Internal 
@@ -540,62 +541,3 @@ with st.expander(" View Building Motion (Acceleration) Equation Details"):
     
     *Note: To prevent occupant discomfort, the peak acceleration must not exceed 0.15 m/s² for residential buildings or 0.25 m/s² for commercial buildings.*
     """)
-# st.write('### 9. Serviceability Check')
-# col1, col2 = st.columns([1, 1.5]) # ปรับขนาดคอลัมน์ให้กล่องคำอธิบายกว้างขึ้นเล็กน้อย
-# with col1:
-#     rho_B = st.number_input("ความหนาแน่นเฉลี่ยมวลอาคาร $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
-# with col2:
-#     # เพิ่มที่มาและอ้างอิงตาม มยผ.1311-50 หัวข้อ 3.7
-#     st.info("💡 **อ้างอิง มยผ.1311-50 (หัวข้อ 3.7):**\n\n"
-#             "**$\\rho_B$ (Average density of the building)** คือ ค่ามวลทั้งหมดของอาคาร หารด้วยปริมาตรของอาคารที่ถูกห่อหุ้มด้วยพื้นผิวภายนอกอาคาร ($Volume = W \\times D \\times H$) "
-#             "โดยทั่วไปอาคารจะมีค่าความหนาแน่นมวลอยู่ระหว่าง **150 - 300 kg/m³**")
-# # Check X-axis
-# alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72)
-# Delta_x = (3 * (H**2 / (2 + alpha)) * 0.75 * q * Ce_H * (C_px_wind - C_px_lee)) / (4 * math.pi**2 * n_D**2 * Wx * rho_B * H**2)
-# a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
-
-# st.markdown(f'''
-# - **Top Drift X-axis ($\Delta_x$)**: `{Delta_x:.4f}` m (Limit = {H/500:.4f} m)
-#   - {"✅ **Passed**" if Delta_x <= H/500 else "❌ **Failed**"}
-# - **Peak Acceleration X-axis 
-# ($a_D$)**: `{a_Dx:.4f}` m/s² (Limit = 0.15 m/s² for Residential, 0.25 m/s² for Commercial)
-# ''')
-# st.markdown("#### 📚 รายละเอียดสมการอ้างอิงตามมาตรฐาน มยผ.1311-50")
-
-# with st.expander("📖 ดูรายละเอียดสมการการโก่งตัวด้านข้าง (Lateral Deflection)"):
-#     st.markdown("""
-#     **การโก่งตัวด้านข้างสูงสุดในทิศทางแนวราบ ณ ยอดอาคาร ($\Delta$)** ภายใต้แรงลมสถิตเทียบเท่า สามารถคำนวณโดยประมาณได้จากสมการ (3-12):
-#     """)
-#     st.latex(r"\Delta = \frac{3 \left( \frac{H^2}{2+\alpha} \right) I_w q C_{eH} C_p}{4 \pi^2 n_D^2 D \rho_B H^2}")
-#     st.markdown("""
-#     **โดยที่ตัวแปรคือ:**
-#     * $I_w$ = ค่าประกอบความสำคัญของแรงลมในสภาวะจำกัดด้านการใช้งาน (กำหนดให้ใช้ 0.75 สำหรับตรวจสอบระยะโก่ง)
-#     * $q$ = หน่วยแรงลมอ้างอิงเนื่องจากความเร็วลม ($q_H$)
-#     * $C_{eH}$ = ค่าประกอบเนื่องจากสภาพภูมิประเทศที่ระดับยอดอาคาร
-#     * $C_p$ = ค่าสัมประสิทธิ์ของหน่วยแรงลมด้านต้นลมและท้ายลมรวมกัน (ตัวอย่างเช่น $0.8 - (-0.5) = 1.3$)
-#     * $\\alpha$ = ตัวยกกำลังของค่าประกอบเนื่องจากสภาพภูมิประเทศ
-#     * $D$ = ความลึกของอาคารในทิศทางขนานกับทิศทางลม
-#     * $\\rho_B$ = ความหนาแน่นเฉลี่ยของมวลอาคาร
-#     * $n_D$ = ความถี่ธรรมชาติของอาคาร
-#     * $H$ = ความสูงของอาคาร
-    
-#     *หมายเหตุ: ระยะโก่งตัวทั้งหมดที่เกิดขึ้น ณ ยอดอาคาร จะต้องไม่เกิน $1/500$ ของความสูงของอาคาร*
-#     """)
-
-# with st.expander("📖 ดูรายละเอียดสมการการสั่นไหวของอาคาร (Building Motion)"):
-#     st.markdown("""
-#     **อัตราเร่งสูงสุดในแนวราบที่ยอดอาคารในทิศทางลม ($a_D$)** มีหน่วยเป็น เมตร/วินาที² สามารถคำนวณโดยประมาณได้จากสมการ (3-13):
-#     """)
-#     st.latex(r"a_D = 4 \pi^2 n_D^2 g_p \sqrt{\frac{K s F}{C_{eH} \beta_D}} \cdot \frac{\Delta}{C_g}")
-#     st.markdown("""
-#     **โดยที่ตัวแปรเพิ่มเติมคือ:**
-#     * $g_p$ = ค่าประกอบเชิงสถิติเพื่อปรับค่ารากกำลังสองเฉลี่ยให้เป็นค่าสูงสุด
-#     * $K$ = ค่าสัมประสิทธิ์ที่มีค่าแปรเปลี่ยนไปตามความขรุขระของสภาพภูมิประเทศ
-#     * $s$ = ตัวคูณลดเนื่องจากขนาดของอาคาร (Size reduction factor)
-#     * $F$ = อัตราส่วนพลังงานของการแปรปรวนของลม ณ ความถี่ธรรมชาติของอาคาร
-#     * $\\beta_D$ = อัตราส่วนความหน่วง (Damping ratio) ของการสั่นไหวในทิศทางลม
-#     * $\Delta$ = การโก่งตัวด้านข้าง ณ ยอดอาคารที่คำนวณได้
-#     * $C_g$ = ค่าประกอบเนื่องจากการกระโชกของลม (Gust effect factor)
-    
-#     *หมายเหตุ: เพื่อไม่ให้ผู้ใช้อาคารรู้สึกไม่สบาย อัตราเร่งสูงสุดจะต้องมีค่าไม่เกิน 0.15 m/s² สำหรับอาคารที่พักอาศัย หรือ 0.25 m/s² สำหรับอาคารพาณิชย์*
-#     """)
