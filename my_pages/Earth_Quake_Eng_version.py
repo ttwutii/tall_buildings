@@ -274,25 +274,63 @@ st.write('---')
 # Section 8: Design Response Spectrum
 st.write('### 8. Design Response Spectrum Acceleration, $S_a$')
 
+# if not bkk:
+#     if cal == cal_list[0]: # Equivalent Static
+#         if SD1 <= SDS:
+#             T0, Ts = 0.0, SD1/SDS
+#             T_data = np.append([T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
+#             S_data = np.array([SDS, SDS])
+#             for T in T_data:
+#                 if T > Ts: S_data = np.append(S_data, [SD1/T])
+#             Sa_structure = SDS if T_structure <= Ts else SD1/T_structure
+#         else:
+#             T0, Ts = 0.2, 1.0
+#             T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
+#             S_data = np.array([SDS, SDS, SD1])
+#             for T in T_data:
+#                 if T > Ts: S_data = np.append(S_data, [SD1/T])
+#             if T_structure <= T0: Sa_structure = SDS
+#             elif T_structure <= Ts:
+#                 f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
+#             else: Sa_structure = SD1/T_structure
+
 if not bkk:
     if cal == cal_list[0]: # Equivalent Static
         if SD1 <= SDS:
             T0, Ts = 0.0, SD1/SDS
             T_data = np.append([T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
-            S_data = np.array([SDS, SDS])
-            for T in T_data:
-                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            T_data = np.unique(np.sort(T_data)) # จัดการค่าซ้ำ
+            
+            # สร้าง S_data ให้ขนาดเท่า T_data ทันที ป้องกันขนาดไม่เท่ากัน
+            S_data = np.zeros_like(T_data)
+            for i, T in enumerate(T_data):
+                if T <= Ts: 
+                    S_data[i] = SDS
+                else: 
+                    S_data[i] = SD1/T
+                    
             Sa_structure = SDS if T_structure <= Ts else SD1/T_structure
-        else:
+            
+        else: # กรณี SD1 > SDS
             T0, Ts = 0.2, 1.0
             T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
-            S_data = np.array([SDS, SDS, SD1])
-            for T in T_data:
-                if T > Ts: S_data = np.append(S_data, [SD1/T])
+            T_data = np.unique(np.sort(T_data))
+            
+            S_data = np.zeros_like(T_data)
+            for i, T in enumerate(T_data):
+                if T <= T0: 
+                    S_data[i] = SDS
+                elif T <= Ts:
+                    f = interpolate.interp1d([T0,Ts], [SDS,SD1])
+                    S_data[i] = f(T)
+                else: 
+                    S_data[i] = SD1/T
+                    
             if T_structure <= T0: Sa_structure = SDS
             elif T_structure <= Ts:
                 f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
             else: Sa_structure = SD1/T_structure
+                    
     elif cal == cal_list[1]: # Dynamic
         if SD1 <= SDS:
             T0, Ts = 0.2*SD1/SDS, SD1/SDS
