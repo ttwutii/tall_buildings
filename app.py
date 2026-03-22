@@ -3,7 +3,8 @@ import streamlit as st
 # 1. กำหนดหน้าต่างๆ โดยชี้ไปที่ Path ของไฟล์ในโฟลเดอร์ views
 home_page = st.Page("my_pages/Home.py", title="Home", icon="🏠")
 ref_code_page = st.Page("my_pages/Reference_Codes.py", title="Reference Code", icon="📚")
-load_combs = st.Page("my_pages/Load_Combinations.py", title="Load Combinations", icon="⚖️")
+load_combs = st.Page("my_pages/Load_Combs.py", title="Load Combinations", icon="⚖️")
+
 #Eng_version
 wind_tall_eng = st.Page("my_pages/Wind_For_Tall_Buildings_Eng_version.py", title="Wind Load - Tall Building ", icon="🏙️")
 earthquake_eng = st.Page("my_pages/Earth_Quake_Eng_version.py", title="Earthquake Load", icon="🌍")
