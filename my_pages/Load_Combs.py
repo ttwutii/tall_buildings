@@ -258,7 +258,7 @@ with tab4:
         
     st.divider()
 
-    st.subheader("Aprximate Load Combination Calculator")
+    st.subheader("Aproximate Load Combination Calculator")
     
     col4_1, col4_2, col4_3, col4_4 = st.columns(4)
     with col4_1: DL = st.number_input("Dead Load (DL)", value=100.0)
