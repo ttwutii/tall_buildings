@@ -15,6 +15,11 @@ except ModuleNotFoundError:
     st.error("The openpyxl library is not installed. Please install it using 'pip install openpyxl'.")
     st.stop()
 
+# --- ฟังก์ชันสำหรับโหลดไฟล์ Excel โดยใช้ Cache (ช่วยให้เว็บเร็วขึ้นมาก) ---
+@st.cache_data
+def load_excel_data(sheet_name):
+    return pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name=sheet_name)
+
 def img_show(name, caption='', width=True):
     image = Image.open(name) 
     return st.image(image, use_column_width=width, caption=caption)
@@ -22,40 +27,29 @@ def img_show(name, caption='', width=True):
 # Title Translation
 st.title('DPT Standard 1301/1302-61: Seismic Design')
 st.divider()
+
 st.caption('### Input number of stories and details of the structure')
-col1, col2, col3 = st.columns([0.2, 0.4, 0.4])
+col1, col2 = st.columns([0.3, 0.7])
 with col1:
-    # Changed "จำนวนชั้น" -> "Number of Stories"
-    
     Floor = st.number_input(label='Number of Stories', min_value=1, max_value=80, value=4, step=1)
 
 with col2:
-    # Changed "กำหนดความสูงแต่ละชั้น" -> "Define Story Heights"
-    with st.expander("Define Story Heights"):
-        Floor_list = []
-        H = 0
-        for i in range(Floor):
-            # Changed label to English
-            Heigth = st.number_input(label=r'$Story \quad %i \quad Height \quad (\mathrm{~m})$'%(i+1), min_value=0.0, value=3.0, step=0.1, key=f"floor{i}")
-            H = Heigth + H
-            Floor_list.append(H)
-
-with col3:
-    # Changed "กำหนดน้ำหนักแต่ละชั้น" -> "Define Story Weights"
-    with st.expander("Define Story Weights"):
-        Weight_list = []
-        Wi = 0
-        Witotal_list = []
-        Witotal = 0
-        for i in range(Floor):
-            # Changed label to English
-            Weight = st.number_input(label=r'$Story \quad %i \quad Weight \quad (\mathrm{~tonne})$'%(i+1), min_value=0.0, value=125.0, step=0.1, key=f"weight{i}")
-            
-            Witotal = Weight + Witotal
-            Witotal_list.append(Witotal)
-        
-            Wi = Weight
-            Weight_list.append(Wi)
+    st.write("### Define Story Data")
+    # สร้าง Dataframe เริ่มต้นสำหรับให้ผู้ใช้กรอก
+    init_data = pd.DataFrame({
+        "Story": [i+1 for i in range(Floor)],
+        "Height (m)": [3.0] * Floor,
+        "Weight (tonne)": [125.0] * Floor
+    })
+    
+    # st.data_editor ช่วยให้กรอกข้อมูลเป็นตารางเหมือน Excel ได้เลย
+    edited_df = st.data_editor(init_data, use_container_width=True, hide_index=True)
+    
+    # ดึงค่าจากตารางไปใช้คำนวณ
+    Floor_list = edited_df["Height (m)"].cumsum().tolist()
+    Weight_list = edited_df["Weight (tonne)"].tolist()
+    Witotal_list = edited_df["Weight (tonne)"].cumsum().tolist()
+    H = Floor_list[-1] if len(Floor_list) > 0 else 0
 
 st.write('---')
 
@@ -96,11 +90,10 @@ st.write('---')
 # Section 4: Design Spectral Acceleration
 st.write('### 4. Design Spectral Response Acceleration')
 
-# Changed "ออกแบบในพื้นที่ในแอ่งกรุงเทพฯ" -> "Design in Bangkok Basin area?"
 bkk = st.checkbox('Design in Bangkok Basin area?', value=False, key='bkk')
 
 if not bkk:
-    df_SsS1 = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='SsS1')
+    df_SsS1 = load_excel_data('SsS1')
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -117,7 +110,8 @@ if not bkk:
     st.write('---')
     st.write('### Site Class Adjustment (Soil Effect)')
 
-    soil_type = st.selectbox(label='Site Class (Soil Type)', options=['A','B','C','D','E'], index=0, key='soil_type')
+    # เพิ่ม Class F
+    soil_type = st.selectbox(label='Site Class (Soil Type)', options=['A','B','C','D','E','F'], index=0, key='soil_type')
 
     def FaFv(df, S):
         if S <= df['index'].min():
@@ -133,16 +127,25 @@ if not bkk:
             F = f([S])[0]
         return F
 
-    df_Fa = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='Fa')
+    df_Fa = load_excel_data('Fa')
     df_Fa.set_index('ประเภทชั้นดิน', inplace=True)
     df_Fa = df_Fa.T.reset_index().astype('float')
 
-    df_Fv = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='Fv')
+    df_Fv = load_excel_data('Fv')
     df_Fv.set_index('ประเภทชั้นดิน', inplace=True)
     df_Fv = df_Fv.T.reset_index().astype('float')
 
-    Fa = FaFv(df_Fa, Ss)
-    Fv = FaFv(df_Fv, S1)
+    # เงื่อนไขรับค่าแบบ Manual สำหรับ Site Class F
+    if soil_type == 'F':
+        st.warning('⚠️ **Site Class F:** ชั้นดินประเภทนี้ต้องอาศัยการวิเคราะห์การตอบสนองเฉพาะพื้นที่ (Site-Specific Geotechnical Investigation) โปรดระบุค่า Fa และ Fv ที่ได้จากรายงานโดยตรง')
+        col_fa, col_fv = st.columns(2)
+        with col_fa:
+            Fa = st.number_input('Manual Fa', min_value=0.0, value=1.000, step=0.001, format="%.3f")
+        with col_fv:
+            Fv = st.number_input('Manual Fv', min_value=0.0, value=1.000, step=0.001, format="%.3f")
+    else:
+        Fa = FaFv(df_Fa, Ss)
+        Fv = FaFv(df_Fv, S1)
 
     st.write(r'$F_a = %.3f$'%(Fa))
     st.write(r'$F_v = %.3f$'%(Fv))
@@ -179,7 +182,7 @@ else:
     else:
         sheet_name = sheet_name_ + '_2.5'
     
-    df_bkk = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name=sheet_name)
+    df_bkk = load_excel_data(sheet_name)
     col = df_bkk.columns
     df_bkk = pd.melt(df_bkk, id_vars=col[0], value_vars=col[1:], var_name='T', value_name='Sa').astype('float')
     
@@ -204,18 +207,17 @@ st.write('---')
 st.write('### 6. Seismic Design Category (SDC)')
 st.info('The SDC classification based on $S_{DS}$ and $S_{D1}$ is determined considering a 5% damping ratio for all building types.')
 
-type_dict = {'1': 'A', '2': 'B', '3': 'C', '4': 'D'} # ก, ข, ค, ง -> A, B, C, D
+type_dict = {'1': 'A', '2': 'B', '3': 'C', '4': 'D'}
 
 def type161162TS(SDS, SD1):
-    # Manual mapping for importance category names in Excel
     imp_map = {'Low': 'น้อย', 'Normal': 'ปกติ', 'High': 'มาก', 'Essential': 'สูงมาก'}
     thai_imp = imp_map[important]
     
-    df = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='T1.6-1')
+    df = load_excel_data('T1.6-1')
     df = pd.melt(df, id_vars=['min','max'], value_vars=['น้อย','ปกติ','มาก','สูงมาก'], var_name='important', value_name='type')
     type161 = df.loc[(df['min']<=SDS) & (df['max']>SDS) & (df['important']==thai_imp), 'type'].iloc[0]
 
-    df = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name='T1.6-2')
+    df = load_excel_data('T1.6-2')
     df = pd.melt(df, id_vars=['min','max'], value_vars=['น้อย','ปกติ','มาก','สูงมาก'], var_name='important', value_name='type')
     type162 = df.loc[(df['min']<=SD1) & (df['max']>SD1) & (df['important']==thai_imp), 'type'].iloc[0]
     
@@ -223,7 +225,7 @@ def type161162TS(SDS, SD1):
     return type161, type162, TS
 
 if bkk and damping=='2.5%':
-    df_bkkx = pd.read_excel('แผ่นดินไหว_table.xlsx', sheet_name=sheet_name_ + '_5.0')
+    df_bkkx = load_excel_data(sheet_name_ + '_5.0')
     colx = df_bkkx.columns
     df_bkkx = pd.melt(df_bkkx, id_vars=col[0], value_vars=col[1:], var_name='T', value_name='Sa').astype('float')
     SDSx = df_bkkx.loc[(df_bkkx['zone']==zone) & (df_bkkx['T']==0.2), 'Sa'].iloc[0]
@@ -272,7 +274,6 @@ st.write('---')
 # Section 8: Design Response Spectrum
 st.write('### 8. Design Response Spectrum Acceleration, $S_a$')
 
-# [Graph Data Logic - Remained the same but with English variables/comments]
 if not bkk:
     if cal == cal_list[0]: # Equivalent Static
         if SD1 <= SDS:
@@ -296,22 +297,20 @@ if not bkk:
         if SD1 <= SDS:
             T0, Ts = 0.2*SD1/SDS, SD1/SDS
             T_data = np.append([0, T0, Ts], np.arange(round(Ts, 1) + 0.1, 2.1, 0.1))
-            T_data = np.unique(np.sort(T_data)) # จัดระเบียบค่า T
+            T_data = np.unique(np.sort(T_data)) 
             
-            # สร้าง S_data ให้ขนาดเท่า T_data ทันที
             S_data = np.zeros_like(T_data)
             for i, T in enumerate(T_data):
-                if T <= T0: S_data[i] = 0.4*SDS + (SDS - 0.4*SDS) * (T/T0) # เส้นลาดช่วงแรก
-                elif T <= Ts: S_data[i] = SDS # ช่วงราบ (Plateau)
-                else: S_data[i] = SD1/T # ช่วงโค้งตามคาบ
+                if T <= T0: S_data[i] = 0.4*SDS + (SDS - 0.4*SDS) * (T/T0)
+                elif T <= Ts: S_data[i] = SDS
+                else: S_data[i] = SD1/T
                 
-            # คำนวณค่าเฉพาะจุด T_structure
             if T_structure <= T0:
                 f = interpolate.interp1d([0.0, T0], [0.4*SDS, SDS]); Sa_structure = f(T_structure)
             elif T_structure <= Ts: Sa_structure = SDS
             else: Sa_structure = SD1/T_structure
         
-        else: # กรณี SD1 > SDS
+        else: # SD1 > SDS
             T0, Ts = 0.2, 1.0
             T_data = np.append([0, T0, Ts], np.arange(1.1, 2.1, 0.1))
             T_data = np.unique(np.sort(T_data))
@@ -330,88 +329,61 @@ if not bkk:
                 f = interpolate.interp1d([T0, Ts], [SDS, SD1]); Sa_structure = f(T_structure)
             else: Sa_structure = SD1/T_structure
 
-# ส่วนการปรับ damping 2.5% (ตอนนี้ S_data กับ T_data ยาวเท่ากันแล้ว จะไม่ error)
-if damping == '2.5%':
+if not bkk and damping == '2.5%':
     for i in range(len(T_data)):
         if T_data[i] >= T0: 
             S_data[i] /= 0.85
         else: 
-            # สูตร Sa ช่วง T < T0 สำหรับ damping 2.5%
             S_data[i] = SDS * (3.88 * T_data[i] / Ts + 0.4)
     
     Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
-
-    # elif cal == cal_list[1]: # Dynamic
-    #     if SD1 <= SDS:
-    #         T0, Ts = 0.2*SD1/SDS, SD1/SDS
-    #         T_data = np.append([0,T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
-    #         S_data = np.array([0.4*SDS, SDS, SDS])
-    #         for T in T_data:
-    #             if T > Ts: S_data = np.append(S_data, [SD1/T])
-    #         if T_structure <= T0:
-    #             f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
-    #         elif T_structure <= Ts: Sa_structure = SDS
-    #         else: Sa_structure = SD1/T_structure
-    #     else:
-    #         T0, Ts = 0.2, 1.0
-    #         T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
-    #         S_data = np.array([0.4*SDS, SDS, SD1])
-    #         for T in T_data:
-    #             if T > Ts: S_data = np.append(S_data, [SD1/T])
-    #         if T_structure <= T0:
-    #             f = interpolate.interp1d([0.0,T0], [0.4*SDS,SDS]); Sa_structure = f(T_structure)
-    #         elif T_structure <= Ts:
-    #             f = interpolate.interp1d([T0,Ts], [SDS,SD1]); Sa_structure = f(T_structure)
-    #         else: Sa_structure = SD1/T_structure
-
-    # if damping == '2.5%':
-    #     for i in range(len(T_data)):
-    #         if T_data[i] >= T0: S_data[i] /= 0.85
-    #         else: S_data[i] = SDS*(3.88*T_data[i]/Ts + 0.4)
-    #     Sa_structure = Sa_structure/0.85 if T_structure >= T0 else SDS*(3.88*T_structure/Ts + 0.4)
     
 elif bkk:
-    T_data = df_bkk.loc[df_bkk['zone']==zone, 'T']
-    S_data = df_bkk.loc[df_bkk['zone']==zone, 'Sa']
+    T_data = df_bkk.loc[df_bkk['zone']==zone, 'T'].values
+    S_data = df_bkk.loc[df_bkk['zone']==zone, 'Sa'].values
     y0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_structure), :].iloc[-1]['Sa']
     y1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_structure), :].iloc[0]['Sa']
     x0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_structure), :].iloc[-1]['T']
     x1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_structure), :].iloc[0]['T']
-    f = interpolate.interp1d([np.log10(x0), np.log10(x1)], [np.log10(y0), np.log10(y1)])
-    Sa_structure = 10**f([np.log10(T_structure)])[0]
+    
+    # ป้องกัน error หาก T_structure ตรงกับค่าพิกัดพอดี
+    if x0 == x1: 
+        Sa_structure = y0
+    else:
+        f = interpolate.interp1d([np.log10(x0), np.log10(x1)], [np.log10(y0), np.log10(y1)])
+        Sa_structure = 10**f([np.log10(T_structure)])[0]
 
-# Plotting Function
-def response_spectrum_plot(T_data, S_data):
+# --- แก้ไขฟังก์ชันพล็อตให้รับค่า Parameter เข้าไปโดยตรง ---
+def response_spectrum_plot(T_data, S_data, t_struct, sa_struct, is_bkk):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=T_data, y=S_data, mode='lines+markers', line=dict(color='blue', width=2), showlegend=False, hoverinfo='skip'))
     
-    # Horizontal/Vertical Indicators
-    fig.add_trace(go.Scatter(x=[min(T_data), T_structure], y=[Sa_structure, Sa_structure], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
+    fig.add_trace(go.Scatter(x=[min(T_data), t_struct], y=[sa_struct, sa_struct], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
     
-    ann_x = np.log10(min(T_data)) if bkk else min(T_data)
-    fig.add_annotation(x=ann_x, y=Sa_structure, text=r'%.3f'%(Sa_structure), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
+    ann_x = np.log10(min(T_data)) if is_bkk else min(T_data)
+    fig.add_annotation(x=ann_x, y=sa_struct, text=r'%.3f'%(sa_struct), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
     
-    fig.add_trace(go.Scatter(x=[T_structure, T_structure], y=[0.0, Sa_structure], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
+    fig.add_trace(go.Scatter(x=[t_struct, t_struct], y=[0.0, sa_struct], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
     
-    ann_tx = np.log10(T_structure) if bkk else T_structure
-    ann_ty = np.log10(0.01) if bkk else 0.0
-    fig.add_annotation(x=ann_tx, y=ann_ty, text=r'%.3f'%(T_structure), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
+    ann_tx = np.log10(t_struct) if is_bkk else t_struct
+    ann_ty = np.log10(0.01) if is_bkk else 0.0
+    fig.add_annotation(x=ann_tx, y=ann_ty, text=r'%.3f'%(t_struct), xanchor="left", yanchor="bottom", font=dict(color="red", size=16), showarrow=False)
     
-    fig.add_trace(go.Scatter(x=[T_structure], y=[Sa_structure], mode='markers', marker=dict(color='red', size=8), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatter(x=[t_struct], y=[sa_struct], mode='markers', marker=dict(color='red', size=8), showlegend=False, hoverinfo='skip'))
     
     fig.update_layout(
         xaxis=dict(title='T (second)', fixedrange=True, range=[0.0, 2.0], rangemode="nonnegative"),
         yaxis=dict(title='Sa (g)', fixedrange=True, range=[0.0, max(S_data)+0.05], rangemode="nonnegative"),
         margin=dict(t=20, b=40), height=300
     )
-    if bkk:
+    if is_bkk:
         fig.update_xaxes(range=[np.log10(0.01), np.log10(10)], type="log")
         fig.update_yaxes(range=[np.log10(0.01), np.log10(1)], type="log")
     return fig
 
 col1, col2 = st.columns([0.7, 0.3])
 with col1:
-    st.plotly_chart(response_spectrum_plot(T_data, S_data), theme=None, use_container_width=True)
+    st.plotly_chart(response_spectrum_plot(T_data, S_data, T_structure, Sa_structure, bkk), theme=None, use_container_width=True)
     st.write(r'Period of structure, $T = %.3f \mathrm{~sec}$'%(T_structure))
     st.write(r'Acceleration of structure, $S_a = %.3f \mathrm{~g}$'%(Sa_structure))
 
@@ -420,7 +392,7 @@ st.write('---')
 with st.expander("Show Seismic Design Calculations"):
 # Section 9: Base Shear
     st.write('### 9. Base Shear, $V$')
-    W = Witotal_list[-1]
+    W = Witotal_list[-1] if len(Witotal_list) > 0 else 0
     st.markdown(r'$Effective \> Seismic \> Weight, W = %.2f \mathrm{~tonne} $'%(W))
 
     st.write('**Seismic Response Coefficient, $C_s$**')
@@ -465,7 +437,7 @@ with st.expander("Show Seismic Design Calculations"):
 
     # Table Calculation
     floors = pd.DataFrame({'Story': []})
-    for i in range(Floor): floors.loc[i+1] = i+1
+    for i in range(Floor): floors.loc[i] = i+1
 
     eq = pd.DataFrame(floors)
     eq['Wx [tonne]'] = Weight_list
