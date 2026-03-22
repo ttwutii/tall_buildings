@@ -26,7 +26,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 # ==========================================
 with tab1:
     st.header("Minimum Live Loads Table")
-    st.markdown("Reference: Clause 11, Table of minimum live loads for various parts of buildings. [cite: 169, 170]")
+    st.markdown("Reference: Clause 11, Table of minimum live loads for various parts of buildings.")
     
     # Complete data according to the Ministerial Regulation B.E. 2566
     data = {

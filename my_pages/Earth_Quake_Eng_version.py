@@ -35,6 +35,7 @@ with col1:
 
 with col2:
     st.write("### Define Story Data")
+    st.caption("You can edit the numbers directly in the table or copy/paste from Excel.")
     # สร้าง Dataframe เริ่มต้นสำหรับให้ผู้ใช้กรอก
     init_data = pd.DataFrame({
         "Story": [i+1 for i in range(Floor)],

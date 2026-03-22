@@ -441,24 +441,24 @@ with tab2:
 
 st.write("---")
 
-
 # ==========================================
 # 8. Serviceability Check (Deflection & Acceleration)
 # ==========================================
 st.write('### 9. Lateral Deflection and Building Motion (Serviceability Check)')
 
-col1, col2 = st.columns([1, 3])
-with col1:
-    rho_B = st.number_input("Average density of the building, $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
-with col2:
-    st.info("💡 **Reference: DPT Standard 1311-50 (Section 3.7):**\n\n"
-            "**$\\rho_B$ (Average density of the building)** is the total mass of the building divided by the enclosed volume ($Volume = W \\times D \\times H$). "
-            "Generally, it ranges between **150 - 300 kg/m³**.")
+# Display the automatically calculated rho_B
+st.write(f"💡 **Average building density ($\\rho_B$)** used for this calculation is **{rho_B:.2f} kg/m³** "
+        f"(Automatically calculated from the total mass divided by the volume $W \\times D \\times H$ according to DPT 1311-50 Section 3.7).")
 
 # Calculate deflection and acceleration (checking X-axis as an example)
 alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72) # Power law exponent for Ce
 Delta_x = (3 * (H**2 / (2 + alpha)) * 0.75 * q * Ce_H * (C_px_wind - C_px_lee)) / (4 * math.pi**2 * n_D**2 * Wx * rho_B * H**2)
-a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
+
+# Check to prevent Division by Zero errors if rho_B or other parameters are 0
+if rho_B > 0 and damping_ratio > 0 and Ce_H > 0:
+    a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
+else:
+    a_Dx = 0
 
 st.markdown(f'''
 - **Maximum lateral deflection at the top, X-axis ($\\Delta_x$)**: `{Delta_x:.4f}` m (Allowable limit = $H/500$ = {H/500:.4f} m) 
@@ -468,6 +468,35 @@ st.markdown(f'''
 ''')
 
 st.write("---")
+
+# (You can append the st.expander details containing the LaTeX equations here as previously provided)
+
+# # ==========================================
+# # 8. Serviceability Check (Deflection & Acceleration)
+# # ==========================================
+# st.write('### 9. Lateral Deflection and Building Motion (Serviceability Check)')
+
+# col1, col2 = st.columns([1, 3])
+# with col1:
+#     rho_B = st.number_input("Average density of the building, $\\rho_B$ (kg/m³)", value=200.0, step=10.0)
+# with col2:
+#     st.info("💡 **Reference: DPT Standard 1311-50 (Section 3.7):**\n\n"
+#             "**$\\rho_B$ (Average density of the building)** is the total mass of the building divided by the enclosed volume ($Volume = W \\times D \\times H$). "
+#             "Generally, it ranges between **150 - 300 kg/m³**.")
+
+# # Calculate deflection and acceleration (checking X-axis as an example)
+# alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72) # Power law exponent for Ce
+# Delta_x = (3 * (H**2 / (2 + alpha)) * 0.75 * q * Ce_H * (C_px_wind - C_px_lee)) / (4 * math.pi**2 * n_D**2 * Wx * rho_B * H**2)
+# a_Dx = 4 * math.pi**2 * n_D**2 * gp_x * math.sqrt((K_x * s_x * F_x) / (Ce_H * damping_ratio)) * (Delta_x / Cg_x)
+
+# st.markdown(f'''
+# - **Maximum lateral deflection at the top, X-axis ($\\Delta_x$)**: `{Delta_x:.4f}` m (Allowable limit = $H/500$ = {H/500:.4f} m) 
+#   - {"✅ **Pass**" if Delta_x <= H/500 else "❌ **Fail**"}
+# - **Maximum peak acceleration, X-axis ($a_D$)**: `{a_Dx:.4f}` m/s² 
+#   - *(Allowable limit = 0.15 m/s² for residential buildings, 0.25 m/s² for commercial buildings)* 
+# ''')
+
+# st.write("---")
 
 # ---------------------------------------------------------
 # Equation Details Expanders
