@@ -78,9 +78,13 @@ with col2:
     
     if cal_type == 'Ultimate Limit State':
         V_bar = V50 * T_F
+        V_bar_mph = V_bar * 2.23694
     else:
         V_bar = V50
+        V_bar_mph = V_bar * 2.23694
     st.markdown(f'$\overline{{V}}={V_bar:.2f}$ m/s')
+    st.markdown(f'$\overline{{V}}={V_bar_mph:.2f}$ mph (for reference)')
+
 
 st.write("---")
 
