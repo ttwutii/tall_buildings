@@ -323,13 +323,53 @@ def plot_pressure(df, title):
     ).configure_mark(orient='horizontal').properties(height=400, title=title)
     st.altair_chart(chart, use_container_width=True)
 
+# def plot_force(df, title):
+#     # เปลี่ยนกราฟให้แสดงค่าแรงกระทำ (kN) แทน Pressure จะเห็นภาพรวมของแรงเฉือนได้ดีกว่า
+#     chart = alt.Chart(df).mark_bar(size=Floor*3, color='#E65100', opacity=0.8).encode(
+#         x=alt.X('Force acting on the layer (kN)', title='Total Force (kN)'),
+#         y=alt.Y('Floor', title='Number of Floors', sort='-y'),
+#         tooltip=['Floor', 'Height from ground (z)', 'Wind-receiving area (m²)', 'Force acting on the layer (kN)']
+#     ).configure_mark(orient='horizontal').properties(height=400, title=title)
+#     st.altair_chart(chart, use_container_width=True)
+def plot_force(df, title):
+    # 1. สร้างส่วนของ "เส้นลูกศร" (วาดจากค่า Force ไปที่ x=0)
+    lines = alt.Chart(df).mark_rule(
+        color='#E65100', 
+        strokeWidth=2 # ปรับความหนาของเส้นได้ที่นี่
+    ).encode(
+        x=alt.X('Force acting on the layer (kN)', title='Total Force (kN)'),
+        x2=alt.value(0), # กำหนดให้ปลายเส้นอีกด้านอยู่ที่แกน Y (x=0)
+        y=alt.Y('Floor', title='Number of Floors', sort='-y'),
+        tooltip=['Floor', 'Height from ground (z)', 'Wind-receiving area (m²)', 'Force acting on the layer (kN)']
+    )
 
+    # 2. สร้างส่วนของ "หัวลูกศร" (ชี้เข้าหาแกน Y)
+    heads = alt.Chart(df).mark_point(
+        shape='triangle-left', # ใช้รูปสามเหลี่ยมชี้ไปทางซ้าย
+        color='#E65100',
+        filled=True,
+        size=100, # ปรับขนาดของหัวลูกศรได้ที่นี่
+        opacity=1
+    ).encode(
+        x=alt.value(0), # วางหัวลูกศรไว้ที่ฝั่งแกน Y (x=0)
+        y=alt.Y('Floor', sort='-y'),
+        tooltip=['Floor', 'Height from ground (z)', 'Wind-receiving area (m²)', 'Force acting on the layer (kN)']
+    )
+
+    # 3. นำกราฟเส้นและหัวลูกศรมาซ้อนกันด้วยเครื่องหมาย +
+    chart = (lines + heads).properties(
+        height=400, 
+        title=title
+    )
+    
+    st.altair_chart(chart, use_container_width=True)
 with tab1:
     st.markdown(f'**Wind parallel to X-axis (Using $C_{{gx}}={Cg_x:.2f}$)**')
     # Using C_pi_minus as an example for designing the critical case
     df_px = pd.DataFrame()
     df_px['Floor'] = range(1, Floor+1)
     df_px['Height from ground (z)'] = Floor_list
+    df_px['Story heights'] = heights
     df_px['Ce(z)'] = Ce_list
     
     # Calculate Net Pressure
@@ -341,27 +381,38 @@ with tab1:
     
     # Combined Pressure
     df_px['Combine wind pressure (N/m²)'] = abs(df_px['Windward (N/m²)']) + abs(df_px['Leeward (N/m²)'])
+
+    # Calculate Load for each floors
+    df_px['Wind-receiving area (m²)'] = df_px['Story heights']*Wy
+    df_px['Force acting on the layer (kN)'] = df_px['Combine wind pressure (N/m²)'] * df_px['Wind-receiving area (m²)'] / 1000
     
     st.dataframe(df_px.round(2), hide_index=True, use_container_width=True)
     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
     with col2:
         plot_pressure(df_px, 'Net Pressure X-axis')
+        plot_force(df_px, 'Wind Force X-axis')
+        
 
 with tab2:
     st.markdown(f'**Wind parallel to Y-axis (Using $C_{{gy}}={Cg_y:.2f}$)**')
     df_py = pd.DataFrame()
     df_py['Floor'] = range(1, Floor+1)
     df_py['Height from ground (z)'] = Floor_list
+    df_py['Story heights'] = heights
     df_py['Ce(z)'] = Ce_list
     
     df_py['Windward (N/m²)'] = I_w * q * df_py['Ce(z)'] * (Cg_y * C_py_wind) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
     df_py['Leeward (N/m²)'] = I_w * q * Ce_05H * (Cg_y * C_py_lee) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
     df_py['Combine wind pressure (N/m²)'] = abs(df_py['Windward (N/m²)']) + abs(df_py['Leeward (N/m²)'])
+
+    df_py['Wind-receiving area (m²)'] = df_py['Story heights']*Wx
+    df_py['Force acting on the layer (kN)'] = df_py['Combine wind pressure (N/m²)'] * df_py['Wind-receiving area (m²)'] / 1000
     
     st.dataframe(df_py.round(2), hide_index=True, use_container_width=True)
     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
     with col2:
         plot_pressure(df_py, 'Net Pressure Y-axis')
+        plot_force(df_py, 'Wind Force Y-axis')
 
 # # ==========================================
 # # 6. Pressure Coefficients Cp and Cpi
