@@ -31,6 +31,16 @@ def run():
         st.write("**Authority:** Department of Public Works and Town & Country Planning (DPT), Thailand")
         st.info("📌 **Application:** Used for Response Spectrum Analysis, seismic zone mapping, and importance factor definitions.")
 
+        # --- Ministerial Regulation  Section ---
+    st.header(" Ministerial Regulations")
+
+    with st.container(border=True):
+        st.subheader("Ministerial Regulation B.E. 2566 (2023)")
+        st.write("**Full Name:** Ministerial Regulation Prescribing the Weight, Resistance, Durability of Buildings, and the Ground Supporting Buildings for Earthquake Resistance, B.E. 2566.")
+        st.write("**Authority:** Ministry of Interior (implemented by the Department of Public Works and Town & Country Planning - DPT)")
+        st.info("📌 **Application:** This is the primary law that mandates seismic design across specific provinces in Thailand.")
+
+
     # --- Professional Disclaimer ---
     st.divider()
     st.warning("""
@@ -45,6 +55,7 @@ def run():
         st.link_button("🔗 Visit DPT Official Website", "https://www.dpt.go.th/th/dpt-standard/", use_container_width=True)
         st.link_button("📄 DPT Standard 1301/1302-61 (PDF)", "https://www.dpt.go.th/th/dpt-standard/854#wow-book/3", use_container_width=True)
         st.link_button("📄 DPT Standard 1311-50 (PDF)", "https://www.dpt.go.th/th/dpt-standard/789#wow-book/", use_container_width=True)
+        st.link_button("📄 Ministerial Regulation B.E. 2566 (2023) (PDF)", "https://download.asa.or.th/03media/04law/cba/mr/mr66-70h.pdf", use_container_width=True)
 
 if __name__ == "__main__":
     run()

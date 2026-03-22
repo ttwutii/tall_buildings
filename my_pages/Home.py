@@ -1,5 +1,5 @@
 import streamlit as st
-st.title('Home')
+st.title('🏗️ Home')
 st.divider()
 
 st.write('#### Titiwut Takhao (wut) :gear: ')

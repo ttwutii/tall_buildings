@@ -369,65 +369,66 @@ with col1:
 
 st.write('---')
 
-# # Section 9: Base Shear
-# st.write('### 9. Base Shear, $V$')
-# W = Witotal_list[-1]
-# st.markdown(r'$Effective \> Seismic \> Weight, W = %.2f \mathrm{~tonne} $'%(W))
+with st.expander("Show Seismic Design Calculations"):
+# Section 9: Base Shear
+    st.write('### 9. Base Shear, $V$')
+    W = Witotal_list[-1]
+    st.markdown(r'$Effective \> Seismic \> Weight, W = %.2f \mathrm{~tonne} $'%(W))
 
-# st.write('**Seismic Response Coefficient, $C_s$**')
-# Cs_ = Sa_structure * I / R
-# Cs = max(Cs_, 0.01)
+    st.write('**Seismic Response Coefficient, $C_s$**')
+    Cs_ = Sa_structure * I / R
+    Cs = max(Cs_, 0.01)
 
-# st.markdown(r'$C_s = S_a \left( \frac{I}{R} \right) \qquad\qquad \ge \qquad 0.01$')
-# st.markdown(r'$\quad\>\> = %.3f \left( \frac{%.2f}{%.2f} \right) \qquad\>\> \ge \qquad 0.01$'%(Sa_structure, I, R))
-# st.markdown(r'$\quad\>\> = %.3f \qquad\qquad\quad \ge \qquad 0.01$'%(Cs_))
-# st.markdown(r'$\quad\>\> = %.3f$'%(Cs))
+    st.markdown(r'$C_s = S_a \left( \frac{I}{R} \right) \qquad\qquad \ge \qquad 0.01$')
+    st.markdown(r'$\quad\>\> = %.3f \left( \frac{%.2f}{%.2f} \right) \qquad\>\> \ge \qquad 0.01$'%(Sa_structure, I, R))
+    st.markdown(r'$\quad\>\> = %.3f \qquad\qquad\quad \ge \qquad 0.01$'%(Cs_))
+    st.markdown(r'$\quad\>\> = %.3f$'%(Cs))
 
-# st.write('**Total Design Base Shear**')
-# V = Cs * W
-# st.markdown(r'$V = C_s W$')
-# st.markdown(r'$\quad = %.3f \mathrm{~g} \times %.2f \mathrm{~tonne}$'%(Cs, W))
-# st.markdown(r'$\quad = %.2f \mathrm{~tonne}$'%(V))
+    st.write('**Total Design Base Shear**')
+    V = Cs * W
+    st.markdown(r'$V = C_s W$')
+    st.markdown(r'$\quad = %.3f \mathrm{~g} \times %.2f \mathrm{~tonne}$'%(Cs, W))
+    st.markdown(r'$\quad = %.2f \mathrm{~tonne}$'%(V))
 
-# st.write('---')
+    st.write('---')
 
-# # Section 10: Vertical Distribution
-# st.write('### 10. Vertical Distribution of Seismic Forces')
+    # Section 10: Vertical Distribution
+    st.write('### 10. Vertical Distribution of Seismic Forces')
 
-# st.write('**Vertical Distribution Exponent ($k$)**')
-# if T_structure <= 0.5:
-#     k = 1.0
-#     st.write(r'For $\qquad T \le 0.5 \mathrm{~sec}, \qquad k = 1.0$')
-# elif T_structure >= 2.5:
-#     k = 2.0
-#     st.write(r'For $\qquad T \ge 2.5 \mathrm{~sec}, \qquad k = 2.0$')
-# else:
-#     k = 1 + (T_structure-0.5)/2
-#     st.write(r'For $\qquad 0.5 \mathrm{~sec} < T < 2.5 \mathrm{~sec}, \qquad k = 1 + \frac{T-0.5}{2} = %.2f $'%(k))
+    st.write('**Vertical Distribution Exponent ($k$)**')
+    if T_structure <= 0.5:
+        k = 1.0
+        st.write(r'For $\qquad T \le 0.5 \mathrm{~sec}, \qquad k = 1.0$')
+    elif T_structure >= 2.5:
+        k = 2.0
+        st.write(r'For $\qquad T \ge 2.5 \mathrm{~sec}, \qquad k = 2.0$')
+    else:
+        k = 1 + (T_structure-0.5)/2
+        st.write(r'For $\qquad 0.5 \mathrm{~sec} < T < 2.5 \mathrm{~sec}, \qquad k = 1 + \frac{T-0.5}{2} = %.2f $'%(k))
 
-# st.write('**Vertical Distribution Factor ($C_{vx}$)**')
-# st.write(r'$C_{v x} = \frac{w_x h_x^k}{\sum_{i=1}^{n} w_i h_i^k}$')
+    st.write('**Vertical Distribution Factor ($C_{vx}$)**')
+    st.write(r'$C_{v x} = \frac{w_x h_x^k}{\sum_{i=1}^{n} w_i h_i^k}$')
 
-# st.write('**Lateral Force at Each Level**')
-# st.write(r'$F_x = C_{v x} V$')
+    st.write('**Lateral Force at Each Level**')
+    st.write(r'$F_x = C_{v x} V$')
 
-# st.write('---')
-# st.write(r'### $Lateral ~ Force ~ and ~ Shear ~ Table$')
+    st.write('---')
+    st.write(r'### $Lateral ~ Force ~ and ~ Shear ~ Table$')
 
-# # Table Calculation
-# floors = pd.DataFrame({'Story': []})
-# for i in range(Floor): floors.loc[i+1] = i+1
+    # Table Calculation
+    floors = pd.DataFrame({'Story': []})
+    for i in range(Floor): floors.loc[i+1] = i+1
 
-# eq = pd.DataFrame(floors)
-# eq['Wx [tonne]'] = Weight_list
-# eq['hx [m]'] = Floor_list 
-# wihxk = eq['Wx [tonne]'] * (eq['hx [m]']**k)
-# eq['Wxhx^k'] = wihxk
-# eq['Cvx'] = wihxk / wihxk.sum()
-# eq['Fx [tonne]'] = eq['Cvx'] * V
-# eq['Fx [tonne]'] = eq['Fx [tonne]'].round(2)
-# eq = eq.sort_index(ascending=False)
-# eq['Vx [tonne]'] = eq['Fx [tonne]'].cumsum()
+    eq = pd.DataFrame(floors)
+    eq['Wx [tonne]'] = Weight_list
+    eq['hx [m]'] = Floor_list 
+    wihxk = eq['Wx [tonne]'] * (eq['hx [m]']**k)
+    eq['Wxhx^k'] = wihxk
+    eq['Cvx'] = wihxk / wihxk.sum()
+    eq['Fx [tonne]'] = eq['Cvx'] * V
+    eq['Fx [tonne]'] = eq['Fx [tonne]'].round(2)
+    eq = eq.sort_index(ascending=False)
+    eq['Vx [tonne]'] = eq['Fx [tonne]'].cumsum()
 
-# # Final Dataframe Display
-# st.dataframe(eq, hide_index=True, use_container_width=True)
+    # Final Dataframe Display
+    st.dataframe(eq, hide_index=True, use_container_width=True)
