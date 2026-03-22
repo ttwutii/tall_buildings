@@ -393,7 +393,7 @@ with st.expander("Show Seismic Design Calculations"):
 # Section 9: Base Shear
     st.write('### 9. Base Shear, $V$')
     W = Witotal_list[-1] if len(Witotal_list) > 0 else 0
-    st.markdown(r'$Effective \> Seismic \> Weight, W = %.2f \mathrm{~tonne} $'%(W))
+    st.markdown(rf'$Effective \text{{ Seismic }} \text{{ Weight, }} W = {W:.2f} \text{{ tonne}}$')
 
     st.write('**Seismic Response Coefficient, $C_s$**')
     Cs_ = Sa_structure * I / R
