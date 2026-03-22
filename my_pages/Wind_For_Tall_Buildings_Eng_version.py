@@ -234,7 +234,7 @@ with tab1:
     df_px['Combine wind pressure (N/m²)'] = abs(df_px['Windward']) + abs(df_px['Leeward'])
     
     st.dataframe(df_px.round(2), hide_index=True, use_container_width=True)
-    col1, col2, col3 = st.columns([0.1, 0.8, 0.1])
+    col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
     with col2:
         plot_pressure(df_px, 'Net Pressure X-axis')
 
@@ -249,15 +249,13 @@ with tab2:
     df_py['Combine wind pressure (N/m²)'] = abs(df_py['Windward']) + abs(df_py['Leeward'])
     
     st.dataframe(df_py.round(2), hide_index=True, use_container_width=True)
-    col1, col2, col3 = st.columns([0.1, 0.8, 0.1])
+    col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
     with col2:
         plot_pressure(df_py, 'Net Pressure Y-axis')
 
 st.write("---")
 
-# ==========================================
-# 8. Serviceability Check (อัตราเร่งและการโก่งตัว)
-# ==========================================
+
 # ==========================================
 # 8. Serviceability Check (Deflection & Acceleration)
 # ==========================================
