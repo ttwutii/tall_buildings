@@ -179,63 +179,109 @@ col2.info(f"**Wind on Y-axis** (W = {Wx}m)\n\n$C_{{gy}}={Cg_y:.3f}$")
 c_gi = 2.0 
 
 st.write("---")
+# ==========================================
+# 6. Wind Pressure Coefficients Cp and Cpi (Ref: Figure B.9)
+# ==========================================
+st.write("---")
+st.write('### 7. External ($C_p$) and Internal ($C_{pi}$) Wind Pressure Coefficients')
 
-# ==========================================
-# 6. Pressure Coefficients Cp and Cpi
-# ==========================================
-st.write('### 7. Pressure Coefficients, $C_p$ and $C_{pi}$')
+# Applicability Check based on Figure B.9 
+col_chk1, col_chk2 = st.columns(2)
+with col_chk1:
+    st.markdown(f"**Height Check:** $H = {H:.2f}$ m")
+    if H > 23:
+        st.success(f"✅ $H > 23$ m (Passes criteria) ")
+    else:
+        st.error(f"❌ $H \le 23$ m (Not applicable for Figure B.9) ")
+with col_chk2:
+    HDs = H / Ds if Ds > 0 else 0
+    st.markdown(f"**Slenderness Check:** $H/D_s = {HDs:.2f}$")
+    if HDs >= 1:
+        st.success(f"✅ $H/D_s \ge 1$ (Passes criteria) ")
+    else:
+        st.error(f"❌ $H/D_s < 1$ (Not applicable for Figure B.9) ")
+
+# Function to calculate Cp based on Figure B.9 
+def get_Cp_windward(HD_ratio):
+    if HD_ratio <= 0.25: return 0.60
+    elif HD_ratio < 1: return 0.27 * (HD_ratio + 2)
+    else: return 0.80
 
 def get_Cp_leeward(HD_ratio):
     if HD_ratio <= 0.25: return -0.30
-    elif HD_ratio < 1: return -0.27*(HD_ratio + 0.88)
+    elif HD_ratio < 1: return -0.27 * (HD_ratio + 0.88)
     else: return -0.50
 
-def get_Cp_windward(HD_ratio):
-    if HD_ratio <= 0.25: return 0.60
-    elif HD_ratio < 1: return 0.27*(HD_ratio + 2)
-    else: return 0.80
-
+# Calculate Cp for each axis
 C_px_wind = get_Cp_windward(H/Wx)
 C_px_lee = get_Cp_leeward(H/Wx)
 C_py_wind = get_Cp_windward(H/Wy)
 C_py_lee = get_Cp_leeward(H/Wy)
 
+# Display Cp and Local Cp*
+st.markdown("**Average Pressure Coefficients ($C_p$) and Local Pressure Coefficients ($C_p^*$)**")
+col_cp1, col_cp2, col_cp3 = st.columns(3)
+col_cp1.info(f"**Wind parallel to X-axis ($D = {Wx}$)**\n- Windward ($C_p$): {C_px_wind:.2f}\n- Leeward ($C_p$): {C_px_lee:.2f}")
+col_cp2.info(f"**Wind parallel to Y-axis ($D = {Wy}$)**\n- Windward ($C_p$): {C_py_wind:.2f}\n- Leeward ($C_p$): {C_py_lee:.2f}")
+col_cp3.warning("**Side Walls and Roof**\n- Side Walls ($C_p$): -0.70 \n- Roof ($C_p$): -1.0 to -0.5 \n- Wall edges ($C_p^*$): -1.20 ")
+
+# Internal Pressure Cpi
 df_c_pi = pd.DataFrame({
-    'Condition': ['No large openings', 'Unevenly distributed leakage', 'Large openings'],
+    'Condition': ['Without large openings', 'With unevenly distributed leakage', 'With large openings'],
     'C_pi-': [-0.15, -0.45, -0.7],
     'C_pi+': [0, 0.3, 0.7]
 })
-c_pi_choice = st.selectbox(label='Internal Pressure Case ($C_{pi}$)', options=df_c_pi['Condition'])
+c_pi_choice = st.selectbox(label='Internal Pressure Condition ($C_{pi}$)', options=df_c_pi['Condition'])
 C_pi_minus = df_c_pi.loc[df_c_pi['Condition'] == c_pi_choice, 'C_pi-'].values[0]
 C_pi_plus = df_c_pi.loc[df_c_pi['Condition'] == c_pi_choice, 'C_pi+'].values[0]
 
 st.write("---")
 
 # ==========================================
-# 7. Net Wind Pressure
+# 7. Net Wind Pressure (Updated Reference Heights for Ce based on Note 5)
 # ==========================================
 st.markdown('### 8. Net Wind Pressure ($P_{net}$)')
-st.markdown('$P_{net}=I_w q C_e C_g C_p - I_w q C_e C_{gi} C_{pi}$')
 
-tab1, tab2 = st.tabs(["Wind on X-axis", "Wind on Y-axis"])
+# Calculate Reference Ce according to the specifications 
+Ce_05H = calculate_Ce(0.5 * H, terrain_type) # For Leeward and Internal 
+Ce_H = calculate_Ce(H, terrain_type)         # For Side walls, Roof, and Local Cg 
+
+with st.expander("📌 View Reference Height Rules for $C_e$ "):
+    st.markdown(f"""
+    - **Windward walls:** Use height at each level ($z$) -> $C_e$ varies with height 
+    - **Leeward walls:** Use $0.5H = {0.5*H:.2f}$ m -> $C_e = {Ce_05H:.3f}$ 
+    - **Side walls and Roof:** Use $H = {H:.2f}$ m -> $C_e = {Ce_H:.3f}$ 
+    - **Internal pressure:** Use $0.5H = {0.5*H:.2f}$ m -> $C_e = {Ce_05H:.3f}$ 
+    """)
+
+tab1, tab2 = st.tabs(["Wind Direction: X-axis", "Wind Direction: Y-axis"])
 
 def plot_pressure(df, title):
     chart = alt.Chart(df).mark_bar(size=Floor*3, color='steelblue', opacity=0.8).encode(
-        x=alt.X('Combine wind pressure (N/m²)', title='Combined Wind Pressure (N/m²)'),
-        y=alt.Y('Height above ground (z)', title='Height (m)', sort='-y'),
-        tooltip=['Height above ground (z)', 'Combine wind pressure (N/m²)']
+        x=alt.X('Combine wind pressure (N/m²)', title='Combine Wind Pressure'),
+        y=alt.Y('Height from ground (z)', title='Height (m)', sort='-y'),
+        tooltip=['Height from ground (z)', 'Windward (N/m²)', 'Leeward (N/m²)', 'Combine wind pressure (N/m²)']
     ).configure_mark(orient='horizontal').properties(height=400, title=title)
     st.altair_chart(chart, use_container_width=True)
 
+
 with tab1:
-    st.markdown(f'**Wind Direction: X-axis (using $C_{{gx}}={Cg_x:.2f}$)**')
+    st.markdown(f'**Wind parallel to X-axis (Using $C_{{gx}}={Cg_x:.2f}$)**')
+    # Using C_pi_minus as an example for designing the critical case
     df_px = pd.DataFrame()
-    df_px['Story'] = range(1, Floor+1)
-    df_px['Height above ground (z)'] = Floor_list
-    df_px['Ce'] = Ce_list
-    df_px['Windward'] = I_w * q * df_px['Ce'] * (Cg_x * C_px_wind) - (I_w * q * df_px['Ce'] * c_gi * C_pi_minus)
-    df_px['Leeward'] = I_w * q * Ce_H * (Cg_x * C_px_lee) - (I_w * q * Ce_H * c_gi * C_pi_minus)
-    df_px['Combine wind pressure (N/m²)'] = abs(df_px['Windward']) + abs(df_px['Leeward'])
+    df_px['Floor'] = range(1, Floor+1)
+    df_px['Height from ground (z)'] = Floor_list
+    df_px['Ce(z)'] = Ce_list
+    
+    # Calculate Net Pressure
+    # Windward: Iw * q * Ce(z) * (Cg * Cp) - Iw * q * Ce(0.5H) * (Cgi * Cpi)
+    df_px['Windward (N/m²)'] = I_w * q * df_px['Ce(z)'] * (Cg_x * C_px_wind) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
+    
+    # Leeward: Iw * q * Ce(0.5H) * (Cg * Cp) - Iw * q * Ce(0.5H) * (Cgi * Cpi)
+    df_px['Leeward (N/m²)'] = I_w * q * Ce_05H * (Cg_x * C_px_lee) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
+    
+    # Combined Pressure
+    df_px['Combine wind pressure (N/m²)'] = abs(df_px['Windward (N/m²)']) + abs(df_px['Leeward (N/m²)'])
     
     st.dataframe(df_px.round(2), hide_index=True, use_container_width=True)
     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
@@ -243,19 +289,97 @@ with tab1:
         plot_pressure(df_px, 'Net Pressure X-axis')
 
 with tab2:
-    st.markdown(f'**Wind Direction: Y-axis (using $C_{{gy}}={Cg_y:.2f}$)**')
+    st.markdown(f'**Wind parallel to Y-axis (Using $C_{{gy}}={Cg_y:.2f}$)**')
     df_py = pd.DataFrame()
-    df_py['Story'] = range(1, Floor+1)
-    df_py['Height above ground (z)'] = Floor_list
-    df_py['Ce'] = Ce_list
-    df_py['Windward'] = I_w * q * df_py['Ce'] * (Cg_y * C_py_wind) - (I_w * q * df_py['Ce'] * c_gi * C_pi_minus)
-    df_py['Leeward'] = I_w * q * Ce_H * (Cg_y * C_py_lee) - (I_w * q * Ce_H * c_gi * C_pi_minus)
-    df_py['Combine wind pressure (N/m²)'] = abs(df_py['Windward']) + abs(df_py['Leeward'])
+    df_py['Floor'] = range(1, Floor+1)
+    df_py['Height from ground (z)'] = Floor_list
+    df_py['Ce(z)'] = Ce_list
+    
+    df_py['Windward (N/m²)'] = I_w * q * df_py['Ce(z)'] * (Cg_y * C_py_wind) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
+    df_py['Leeward (N/m²)'] = I_w * q * Ce_05H * (Cg_y * C_py_lee) - (I_w * q * Ce_05H * c_gi * C_pi_minus)
+    df_py['Combine wind pressure (N/m²)'] = abs(df_py['Windward (N/m²)']) + abs(df_py['Leeward (N/m²)'])
     
     st.dataframe(df_py.round(2), hide_index=True, use_container_width=True)
     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
     with col2:
         plot_pressure(df_py, 'Net Pressure Y-axis')
+
+# # ==========================================
+# # 6. Pressure Coefficients Cp and Cpi
+# # ==========================================
+# st.write('### 7. Pressure Coefficients, $C_p$ and $C_{pi}$')
+
+# def get_Cp_leeward(HD_ratio):
+#     if HD_ratio <= 0.25: return -0.30
+#     elif HD_ratio < 1: return -0.27*(HD_ratio + 0.88)
+#     else: return -0.50
+
+# def get_Cp_windward(HD_ratio):
+#     if HD_ratio <= 0.25: return 0.60
+#     elif HD_ratio < 1: return 0.27*(HD_ratio + 2)
+#     else: return 0.80
+
+# C_px_wind = get_Cp_windward(H/Wx)
+# C_px_lee = get_Cp_leeward(H/Wx)
+# C_py_wind = get_Cp_windward(H/Wy)
+# C_py_lee = get_Cp_leeward(H/Wy)
+
+# df_c_pi = pd.DataFrame({
+#     'Condition': ['No large openings', 'Unevenly distributed leakage', 'Large openings'],
+#     'C_pi-': [-0.15, -0.45, -0.7],
+#     'C_pi+': [0, 0.3, 0.7]
+# })
+# c_pi_choice = st.selectbox(label='Internal Pressure Case ($C_{pi}$)', options=df_c_pi['Condition'])
+# C_pi_minus = df_c_pi.loc[df_c_pi['Condition'] == c_pi_choice, 'C_pi-'].values[0]
+# C_pi_plus = df_c_pi.loc[df_c_pi['Condition'] == c_pi_choice, 'C_pi+'].values[0]
+
+# st.write("---")
+
+# # ==========================================
+# # 7. Net Wind Pressure
+# # ==========================================
+# st.markdown('### 8. Net Wind Pressure ($P_{net}$)')
+# st.markdown('$P_{net}=I_w q C_e C_g C_p - I_w q C_e C_{gi} C_{pi}$')
+
+# tab1, tab2 = st.tabs(["Wind on X-axis", "Wind on Y-axis"])
+
+# def plot_pressure(df, title):
+#     chart = alt.Chart(df).mark_bar(size=Floor*3, color='steelblue', opacity=0.8).encode(
+#         x=alt.X('Combine wind pressure (N/m²)', title='Combined Wind Pressure (N/m²)'),
+#         y=alt.Y('Height above ground (z)', title='Height (m)', sort='-y'),
+#         tooltip=['Height above ground (z)', 'Combine wind pressure (N/m²)']
+#     ).configure_mark(orient='horizontal').properties(height=400, title=title)
+#     st.altair_chart(chart, use_container_width=True)
+
+# with tab1:
+#     st.markdown(f'**Wind Direction: X-axis (using $C_{{gx}}={Cg_x:.2f}$)**')
+#     df_px = pd.DataFrame()
+#     df_px['Story'] = range(1, Floor+1)
+#     df_px['Height above ground (z)'] = Floor_list
+#     df_px['Ce'] = Ce_list
+#     df_px['Windward'] = I_w * q * df_px['Ce'] * (Cg_x * C_px_wind) - (I_w * q * df_px['Ce'] * c_gi * C_pi_minus)
+#     df_px['Leeward'] = I_w * q * Ce_H * (Cg_x * C_px_lee) - (I_w * q * Ce_H * c_gi * C_pi_minus)
+#     df_px['Combine wind pressure (N/m²)'] = abs(df_px['Windward']) + abs(df_px['Leeward'])
+    
+#     st.dataframe(df_px.round(2), hide_index=True, use_container_width=True)
+#     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
+#     with col2:
+#         plot_pressure(df_px, 'Net Pressure X-axis')
+
+# with tab2:
+#     st.markdown(f'**Wind Direction: Y-axis (using $C_{{gy}}={Cg_y:.2f}$)**')
+#     df_py = pd.DataFrame()
+#     df_py['Story'] = range(1, Floor+1)
+#     df_py['Height above ground (z)'] = Floor_list
+#     df_py['Ce'] = Ce_list
+#     df_py['Windward'] = I_w * q * df_py['Ce'] * (Cg_y * C_py_wind) - (I_w * q * df_py['Ce'] * c_gi * C_pi_minus)
+#     df_py['Leeward'] = I_w * q * Ce_H * (Cg_y * C_py_lee) - (I_w * q * Ce_H * c_gi * C_pi_minus)
+#     df_py['Combine wind pressure (N/m²)'] = abs(df_py['Windward']) + abs(df_py['Leeward'])
+    
+#     st.dataframe(df_py.round(2), hide_index=True, use_container_width=True)
+#     col1, col2, col3 = st.columns([0.35, 0.3, 0.35])
+#     with col2:
+#         plot_pressure(df_py, 'Net Pressure Y-axis')
 
 st.write("---")
 
