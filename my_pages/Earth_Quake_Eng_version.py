@@ -39,7 +39,7 @@ with col2:
     # สร้าง Dataframe เริ่มต้นสำหรับให้ผู้ใช้กรอก
     init_data = pd.DataFrame({
         "Story": [i+1 for i in range(Floor)],
-        "Height (m)": [3.0] * Floor,
+        "Height (m)": [4.0] * Floor,
         "Weight (tonne)": [125.0] * Floor
     })
     
