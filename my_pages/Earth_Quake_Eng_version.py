@@ -299,7 +299,7 @@ if not bkk:
     if cal == cal_list[0]: # Equivalent Static
         if SD1 <= SDS:
             T0, Ts = 0.0, SD1/SDS
-            T_data = np.append([T0,Ts], np.arange(round(Ts,1), 2.1, 0.1))
+            T_data = np.append([T0,Ts], np.arange(round(Ts,1), 10.1, 0.1))
             T_data = np.unique(np.sort(T_data)) # จัดการค่าซ้ำ
             
             # สร้าง S_data ให้ขนาดเท่า T_data ทันที ป้องกันขนาดไม่เท่ากัน
@@ -314,7 +314,7 @@ if not bkk:
             
         else: # กรณี SD1 > SDS
             T0, Ts = 0.2, 1.0
-            T_data = np.append([0,T0,Ts], np.arange(1.1, 2.1, 0.1))
+            T_data = np.append([0,T0,Ts], np.arange(1.1, 10.1, 0.1))
             T_data = np.unique(np.sort(T_data))
             
             S_data = np.zeros_like(T_data)
@@ -335,7 +335,7 @@ if not bkk:
     elif cal == cal_list[1]: # Dynamic
         if SD1 <= SDS:
             T0, Ts = 0.2*SD1/SDS, SD1/SDS
-            T_data = np.append([0, T0, Ts], np.arange(round(Ts, 1) + 0.1, 2.1, 0.1))
+            T_data = np.append([0, T0, Ts], np.arange(round(Ts, 1) + 0.1, 10.1, 0.1))
             T_data = np.unique(np.sort(T_data)) 
             
             S_data = np.zeros_like(T_data)
@@ -351,7 +351,7 @@ if not bkk:
         
         else: # SD1 > SDS
             T0, Ts = 0.2, 1.0
-            T_data = np.append([0, T0, Ts], np.arange(1.1, 2.1, 0.1))
+            T_data = np.append([0, T0, Ts], np.arange(1.1, 10.1, 0.1))
             T_data = np.unique(np.sort(T_data))
             
             S_data = np.zeros_like(T_data)
@@ -395,7 +395,8 @@ elif bkk:
 # --- แก้ไขฟังก์ชันพล็อตให้รับค่า Parameter เข้าไปโดยตรง ---
 def response_spectrum_plot(T_data, S_data, t_struct, sa_struct, is_bkk):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=T_data, y=S_data, mode='lines+markers', line=dict(color='blue', width=2), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatter(x=T_data, y=S_data, mode='lines', line=dict(color='blue', width=2), showlegend=False, hoverinfo='skip'))
+    #fig.add_trace(go.Scatter(x=T_data, y=S_data, mode='lines+markers', line=dict(color='blue', width=2), showlegend=False, hoverinfo='skip'))
     
     fig.add_trace(go.Scatter(x=[min(T_data), t_struct], y=[sa_struct, sa_struct], mode='lines', line=dict(dash='dash', width=3, color='red'), hoverinfo='skip', showlegend=False))
     
@@ -411,7 +412,7 @@ def response_spectrum_plot(T_data, S_data, t_struct, sa_struct, is_bkk):
     fig.add_trace(go.Scatter(x=[t_struct], y=[sa_struct], mode='markers', marker=dict(color='red', size=8), showlegend=False, hoverinfo='skip'))
     
     fig.update_layout(
-        xaxis=dict(title='T (second)', fixedrange=True, range=[0.0, 2.0], rangemode="nonnegative"),
+        xaxis=dict(title='T (second)', fixedrange=True, range=[0.0, 10.0], rangemode="nonnegative"),
         yaxis=dict(title='Sa (g)', fixedrange=True, range=[0.0, max(S_data)+0.05], rangemode="nonnegative"),
         margin=dict(t=20, b=40), height=300
     )
