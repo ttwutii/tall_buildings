@@ -592,3 +592,224 @@ with st.expander(" View Building Motion (Acceleration) Equation Details"):
     
     *Note: To prevent occupant discomfort, the peak acceleration must not exceed 0.15 m/s² for residential buildings or 0.25 m/s² for commercial buildings.*
     """)
+
+#Chapter 4: Across-wind Response and Torsional Moment")
+
+
+st.write("---")
+st.header("Across-wind Response and Torsional Moment")
+st.caption("This chapter evaluates the across-wind response and torsional effects on the building, which are critical for slender buildings under wind loads. The calculations follow the procedures outlined in DPT Standard 1311-50, Section 4.")
+
+# Assuming these variables are already calculated/fetched from Chapters 1-3:
+# H, Wx, Wy, Floor_list, heights, V_bar, Ce_H, q (from q_H), I_w, rho_B, Cg_x, Cg_y
+
+# Calculate wind velocity at the top of the building (V_H) and q_H
+V_H = V_bar * math.sqrt(Ce_H)
+q_H = q * Ce_H
+
+# ==========================================
+# Pre-Check: Is the building slender enough?
+# ==========================================
+# W * D is the same for both X and Y axes (Wx * Wy == Wy * Wx)
+slenderness_check = H / math.sqrt(Wx * Wy) if (Wx * Wy) > 0 else 0
+
+if slenderness_check < 3.0:
+    st.info(f"💡 **Building Slenderness Ratio:** $H/\\sqrt{{WD}} = {slenderness_check:.2f}$")
+    st.success("✅ **Building is not slender enough ($< 3.0$). Across-wind and torsional effects are not significant.** \n\n**➡️ You can safely skip this chapter.**")
+    
+    # The rest of Chapter 4 will NOT be rendered.
+else:
+    # ==========================================
+    # Step 1: Additional Dynamic Properties
+    # ==========================================
+    st.subheader("1. Dynamic Properties for Across-wind and Torsion")
+    col_dyn1, col_dyn2, col_dyn3, col_dyn4 = st.columns(4)
+    with col_dyn1:
+        n_W = st.number_input("Across-wind Natural Freq. $n_W$ (Hz)", value=44.0/H if H>0 else 1.0, step=0.1)
+    with col_dyn2:
+        beta_W = st.number_input("Across-wind Damping $\\beta_W$", value=0.015, step=0.005, format="%.3f")
+    with col_dyn3:
+        n_T = st.number_input("Torsional Natural Freq. $n_T$ (Hz)", value=55.0/H if H>0 else 1.2, step=0.1)
+    with col_dyn4:
+        beta_T = st.number_input("Torsional Damping $\\beta_T$", value=0.015, step=0.005, format="%.3f")
+
+    # ==========================================
+    # Step 2: Applicability Checks (Section 4.1)
+    # ==========================================
+    st.subheader("Applicability Checks ")
+    st.markdown("The standard specifies limits for buildings to be considered for across-wind and torsional effects:")
+
+    def check_section_4_1(H, W, D, V_H, n_W, n_T):
+        r_slenderness = H / math.sqrt(W * D)
+        r_DW = D / W
+        r_vW = V_H / (n_W * math.sqrt(W * D)) if n_W > 0 else float('inf')
+        r_vT = V_H / (n_T * math.sqrt(W * D)) if n_T > 0 else float('inf')
+        
+        is_applicable = True # ตั้งค่าเริ่มต้นให้ผ่าน
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**A. Necessity to Consider**")
+            st.success(f"$\\frac{{H}}{{\\sqrt{{WD}}}} = {r_slenderness:.2f} \\ge 3$ \n\n**(✅ Must calculate)**")
+                
+            st.markdown("**B. Building Shape and Proportions**")
+            if r_slenderness <= 6.0:
+                st.success(f"$\\frac{{H}}{{\\sqrt{{WD}}}} = {r_slenderness:.2f}$ (✅ $\\le 6$)")
+            else:
+                st.error(f"$\\frac{{H}}{{\\sqrt{{WD}}}} = {r_slenderness:.2f}$ (❌ Exceeds 6)")
+                is_applicable = False
+                
+            if 0.2 <= r_DW <= 5.0:
+                st.success(f"$\\frac{{D}}{{W}} = {r_DW:.2f}$ (✅ Within 0.2 to 5)")
+            else:
+                st.error(f"$\\frac{{D}}{{W}} = {r_DW:.2f}$ (❌ Out of bounds: 0.2 to 5)")
+                is_applicable = False
+
+        with col2:
+            st.markdown("**C. Across-wind Applicability Limit**")
+            if r_vW <= 10.0:
+                st.success(f"$\\frac{{V_H}}{{n_W\\sqrt{{WD}}}} = {r_vW:.2f} \\le 10$ (✅ Within scope)")
+            else:
+                st.error(f"$\\frac{{V_H}}{{n_W\\sqrt{{WD}}}} = {r_vW:.2f} > 10$ (❌ Building is too flexible)")
+                is_applicable = False
+
+            st.markdown("**D. Torsional Moment Applicability Limit**")
+            if r_vT <= 10.0:
+                st.success(f"$\\frac{{V_H}}{{n_T\\sqrt{{WD}}}} = {r_vT:.2f} \\le 10$ (✅ Within scope)")
+            else:
+                st.error(f"$\\frac{{V_H}}{{n_T\\sqrt{{WD}}}} = {r_vT:.2f} > 10$ (❌ Building is too flexible)")
+                is_applicable = False
+        
+        if not is_applicable:
+            st.error("⚠️ **The building parameters fall outside the limits of this standard. This chapter CANNOT be used for this wind direction.**")
+                
+        return is_applicable
+
+    tab_chk_x, tab_chk_y = st.tabs(["Wind Direction: X-axis", "Wind Direction: Y-axis"])
+    with tab_chk_x:
+        st.markdown("*Wind acting on X-axis (Width $W = W_y$, Depth $D = W_x$)*")
+        can_calc_x = check_section_4_1(H, W=Wy, D=Wx, V_H=V_H, n_W=n_W, n_T=n_T)
+    with tab_chk_y:
+        st.markdown("*Wind acting on Y-axis (Width $W = W_x$, Depth $D = W_y$)*")
+        can_calc_y = check_section_4_1(H, W=Wx, D=Wy, V_H=V_H, n_W=n_W, n_T=n_T)
+
+    # ==========================================
+    # Step 3 & 4: P_L and M_T Functions
+    # ==========================================
+    def calculate_across_wind_force(H, W, D, V_H, n_W, beta_W, q_H, I_w, z, Area):
+        ratio_DW = D / W
+        C_L_prime = 0.0082*(ratio_DW**3) - 0.071*(ratio_DW**2) + 0.22*(ratio_DW) 
+        g_L = math.sqrt(2 * math.log(3600 * n_W)) + 0.577 / math.sqrt(2 * math.log(3600 * n_W)) 
+        
+        beta_1 = ((ratio_DW**4) + 23*(ratio_DW**2)) / (2.8*(ratio_DW**4) - 9.8*(ratio_DW**3) + 18*(ratio_DW**2) + 9.5*(ratio_DW) - 0.15) + (0.12 / ratio_DW) 
+        lambda_1 = ((1 + 0.38*(ratio_DW**2))**0.89 / 0.12) * ((n_W * W) / V_H) 
+        term_FL1 = (4 * 0.85 * (1 + 0.6 * beta_1) * beta_1) / math.pi 
+        term_FL2 = (lambda_1**2) / (((1 - lambda_1**2)**2) + 4 * (beta_1**2) * (lambda_1**2)) 
+        
+        if ratio_DW < 3.0: 
+            F_L = term_FL1 * term_FL2
+        else:
+            beta_2 = 0.28 / (ratio_DW**0.34) 
+            lambda_2 = ((ratio_DW**0.85) / 0.56) * ((n_W * W) / V_H) 
+            term_FL1_2 = (4 * 0.02 * (1 + 0.6 * beta_2) * beta_2) / math.pi 
+            term_FL2_2 = (lambda_2**2) / (((1 - lambda_2**2)**2) + 4 * (beta_2**2) * (lambda_2**2)) 
+            F_L = (term_FL1 * term_FL2) + (term_FL1_2 * term_FL2_2) 
+            
+        R_L = (math.pi * F_L) / (4 * beta_W) 
+        P_L = 3 * I_w * q_H * C_L_prime * Area * (z / H) * g_L * math.sqrt(1 + R_L) 
+        a_w = 3 * I_w * q_H * C_L_prime * g_L * (W / (rho_B * W * D)) * (z / H) * math.sqrt(R_L) 
+        return P_L, a_w, C_L_prime, F_L
+
+    def calculate_torsion_moment(H, W, D, V_H, n_T, beta_T, q_H, I_w, z, Area):
+        ratio_DW = D / W
+        C_T_prime = (0.0066 + 0.015 * (ratio_DW**2)) ** 0.78 
+        g_T = math.sqrt(2 * math.log(3600 * n_T)) + 0.577 / math.sqrt(2 * math.log(3600 * n_T)) 
+        V_T_star = V_H / (n_T * math.sqrt(W * D)) 
+        L = max(W, D) 
+        
+        def get_FT(v_star):
+            if v_star <= 4.5: 
+                Kt = (-1.1*ratio_DW + 0.97)/(ratio_DW**2 + 0.85*ratio_DW + 3.3) + 0.17 
+                lt = (ratio_DW + 3.6)/(ratio_DW**2 - 5.1*ratio_DW + 9.1) + (0.14/ratio_DW) + 0.14 
+            else: 
+                Kt = (0.077*ratio_DW - 0.16)/(ratio_DW**2 - 0.96*ratio_DW + 0.42) + (0.35/ratio_DW) + 0.095 
+                lt = (0.44*(ratio_DW**2) - 0.0064)/((ratio_DW**4) - 0.26*(ratio_DW**2) + 0.1) + 0.2 
+            return (0.14 * (Kt**2) * (v_star**(2*lt)) / math.pi) * (D*(W**2 + D**2)**2) / ((L**2)*(W**3)) 
+
+        if V_T_star <= 4.5 or (6 <= V_T_star <= 10): 
+            F_T = get_FT(V_T_star)
+        elif 4.5 < V_T_star < 6: 
+            F_4_5 = get_FT(4.5) 
+            F_6 = get_FT(6.0) 
+            term_exp = 3.5 * math.log(F_6 / F_4_5) * math.log(V_T_star / 4.5) 
+            F_T = F_4_5 * math.exp(term_exp) 
+        else:
+            F_T = 0 
+            
+        R_T = (math.pi * F_T) / (4 * beta_T) 
+        M_T = 1.8 * I_w * q_H * C_T_prime * Area * W * (z / H) * g_T * math.sqrt(1 + R_T) 
+        return M_T, C_T_prime, F_T
+
+    # ==========================================
+    # Step 5: Story Forces and Load Combinations
+    # ==========================================
+    st.subheader(" Across-wind and Torsional Results (Story-by-Story)")
+
+    tab_calc_x, tab_calc_y = st.tabs(["Wind Direction: X-axis", "Wind Direction: Y-axis"])
+
+    def calculate_story_forces_chapter4(H, W, D, V_H, n_W, beta_W, n_T, beta_T, q_H, I_w, floor_zs, floor_hs):
+        results = []
+        a_w_top = 0
+        for z, h_story in zip(floor_zs, floor_hs):
+            Area = W * h_story
+            P_L, a_w, CL_p, FL = calculate_across_wind_force(H, W, D, V_H, n_W, beta_W, q_H, I_w, z, Area)
+            M_T, CT_p, FT = calculate_torsion_moment(H, W, D, V_H, n_T, beta_T, q_H, I_w, z, Area)
+
+            if abs(z - H) < 0.001: 
+                a_w_top = a_w 
+            
+            results.append({
+                "Height (z)": z,
+                "Wind Area (m²)": Area,
+                "P_across (kN)": P_L / 1000,
+                "M_torsion (kN-m)": M_T / 1000,
+            })
+        return pd.DataFrame(results), a_w_top
+
+    with tab_calc_x:
+        st.markdown("**Wind acting on X-axis ($W = Wy, D = Wx$)**")
+        if can_calc_x: # ใช้ตัวแปร can_calc_x ควบคุมการคำนวณ
+            df_ch4_x, a_w_top_x = calculate_story_forces_chapter4(H, Wy, Wx, V_H, n_W, beta_W, n_T, beta_T, q_H, I_w, Floor_list, heights)
+            st.dataframe(df_ch4_x.round(3), hide_index=True, use_container_width=True)
+            st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_x:.4f}` m/s²")
+            
+            st.markdown("##### Load Combinations (Section 4.5)")
+            st.markdown("""
+            * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
+            * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
+            """)
+            factor_B = 0.4 + (0.6 / Cg_x)
+            with st.expander(" View Factor for Case B Calculation"):
+                st.markdown(f"**Factor for $P_{{along}}$ in Case B:** $0.4 + \\frac{{0.6}}{{C_g}} = 0.4 + \\frac{{0.6}}{{{Cg_x:.2f}}} = {factor_B:.3f}$")
+        else:
+            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements of Section 4.1.**")
+
+    with tab_calc_y:
+        st.markdown("**Wind acting on Y-axis ($W = Wx, D = Wy$)**")
+        if can_calc_y: # ใช้ตัวแปร can_calc_y ควบคุมการคำนวณ
+            df_ch4_y, a_w_top_y = calculate_story_forces_chapter4(H, Wx, Wy, V_H, n_W, beta_W, n_T, beta_T, q_H, I_w, Floor_list, heights)
+            st.dataframe(df_ch4_y.round(3), hide_index=True, use_container_width=True)
+            st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_y:.4f}` m/s²")
+            
+            st.markdown("##### Load Combinations (Section 4.5)")
+            st.markdown("""
+            * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
+            * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
+            """)      
+            factor_B = 0.4 + (0.6 / Cg_y)
+            with st.expander(" View Factor for Case B Calculation"):
+                st.markdown(f"**Factor for $P_{{along}}$ in Case B:** $0.4 + \\frac{{0.6}}{{C_g}} = 0.4 + \\frac{{0.6}}{{{Cg_y:.2f}}} = {factor_B:.3f}$")
+        else:
+            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements of Section 4.1.**")
+
+st.write("---")
