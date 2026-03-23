@@ -500,7 +500,7 @@ st.write('### 9. Lateral Deflection and Building Motion (Serviceability Check)')
 
 # Display the automatically calculated rho_B
 st.write(f"💡 **Average building density ($\\rho_B$)** used for this calculation is **{rho_B:.2f} kg/m³** "
-        f"(Automatically calculated from the total mass divided by the volume $W \\times D \\times H$ according to DPT 1311-50 Section 3.7).")
+        f"(Automatically calculated from the total mass divided by the volume $W \\times D \\times H$ according to DPT 1311-50).")
 
 # Calculate deflection and acceleration (checking X-axis as an example)
 alpha = 0.5 if terrain_type == 'B' else (0.28 if terrain_type == 'A' else 0.72) # Power law exponent for Ce
@@ -783,7 +783,7 @@ else:
             st.dataframe(df_ch4_x.round(3), hide_index=True, use_container_width=True)
             st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_x:.4f}` m/s²")
             
-            st.markdown("##### Load Combinations (Section 4.5)")
+            st.markdown("##### Load Combinations ")
             st.markdown("""
             * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
             * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
@@ -792,7 +792,7 @@ else:
             with st.expander(" View Factor for Case B Calculation"):
                 st.markdown(f"**Factor for $P_{{along}}$ in Case B:** $0.4 + \\frac{{0.6}}{{C_g}} = 0.4 + \\frac{{0.6}}{{{Cg_x:.2f}}} = {factor_B:.3f}$")
         else:
-            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements of Section 4.1.**")
+            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements.**")
 
     with tab_calc_y:
         st.markdown("**Wind acting on Y-axis ($W = Wx, D = Wy$)**")
@@ -801,7 +801,7 @@ else:
             st.dataframe(df_ch4_y.round(3), hide_index=True, use_container_width=True)
             st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_y:.4f}` m/s²")
             
-            st.markdown("##### Load Combinations (Section 4.5)")
+            st.markdown("##### Load Combinations ")
             st.markdown("""
             * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
             * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
@@ -810,6 +810,6 @@ else:
             with st.expander(" View Factor for Case B Calculation"):
                 st.markdown(f"**Factor for $P_{{along}}$ in Case B:** $0.4 + \\frac{{0.6}}{{C_g}} = 0.4 + \\frac{{0.6}}{{{Cg_y:.2f}}} = {factor_B:.3f}$")
         else:
-            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements of Section 4.1.**")
+            st.error(" **Calculation is skipped for this axis because it does not meet the applicability requirements.**")
 
 st.write("---")
