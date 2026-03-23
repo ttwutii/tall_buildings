@@ -270,6 +270,159 @@ with col2:
 with col3:
     Cd = st.number_input(label='Deflection Amplification Factor, $C_d$', min_value=0.0, value=5.5, key='Cd')
 
+
+# Create Expander
+with st.expander("Table 2.3-1 Response Modification Factors and Additional Requirements", expanded=False):
+    
+    st.markdown("### Table 2.3-1 Response Modification Factor ($R$), System Overstrength Factor ($\\Omega_0$), and Deflection Amplification Factor ($C_d$)")
+    
+    # Create Tabs for better readability
+    tab1, tab2, tab3 = st.tabs(["Categories 1 - 2", "Category 3", "Categories 4 - 7"])
+    
+    # Tab 1: Categories 1 and 2
+    with tab1:
+        st.markdown("""
+| Basic Seismic-Force-Resisting System | Lateral Force-Resisting System | $R$ | $\\Omega_0$ | $C_d$ | B | C | D |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1. Bearing Wall System** | Ordinary Reinforced Concrete Shear Wall | 4 | 2.5 | 4 | ✔️ | ✔️ | * |
+| | Special Reinforced Concrete Shear Wall | 5 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+| | Ordinary Precast Shear Wall ++ | 3 | 2.5 | 3 | ✔️ | ❌ | ❌ |
+| | Intermediate Precast Shear Wall ++ | 4 | 2.5 | 4 | ✔️ | ✔️ | ❌ |
+| **2. Building Frame System** | Steel Eccentrically Braced Frame with Moment-Resisting Connections | 8 | 2 | 4 | ✔️ | ✔️ | ✔️ |
+| | Steel Eccentrically Braced Frame with Non-Moment-Resisting Connections | 7 | 2 | 4 | ✔️ | ✔️ | ✔️ |
+| | Special Steel Concentric Braced Frame | 6 | 2 | 5 | ✔️ | ✔️ | ✔️ |
+| | Ordinary Steel Concentric Braced Frame | 3.5 | 2 | 3.5 | ✔️ | ✔️ | ❌ |
+| | Special Reinforced Concrete Shear Wall | 6 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+| | Ordinary Reinforced Concrete Shear Wall | 5 | 2.5 | 4.5 | ✔️ | ✔️ | * |
+| | Ordinary Precast Shear Wall ++ | 4 | 2.5 | 4 | ✔️ | ❌ | ❌ |
+| | Intermediate Precast Shear Wall ++ | 5 | 2.5 | 4.5 | ✔️ | ✔️ | ❌ |
+        """)
+
+    # Tab 2: Category 3
+    with tab2:
+        st.markdown("""
+| Basic Seismic-Force-Resisting System | Lateral Force-Resisting System | $R$ | $\\Omega_0$ | $C_d$ | B | C | D |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **3. Moment Resisting Frame** | Ductile/Special Steel Moment-Resisting Frame | 8 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+| | Special Truss Moment Frame | 7 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+| | Intermediate Steel Moment Resisting Frame | 4.5 | 3 | 4 | ✔️ | ✔️ | * |
+| | Ordinary Steel Moment Resisting Frame | 3.5 | 3 | 3 | ✔️ | ✔️ | ❌ |
+| | Precast or Cast-in-Place Ductile/Special Reinforced Concrete Moment Resisting Frame ++ | 8 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+| | Ductile RC Moment-Resisting Frame with Limited Ductility/ Intermediate RC Moment-Resisting Frame | 5 | 3 | 4.5 | ✔️ | ✔️ | * |
+| | Ordinary Reinforced Concrete Moment Resisting Frame | 3 | 3 | 2.5 | ✔️ | ❌ | ❌ |
+        """)
+
+    # Tab 3: Categories 4 to 7
+    with tab3:
+        st.markdown("""
+| Basic Seismic-Force-Resisting System | Lateral Force-Resisting System | $R$ | $\\Omega_0$ | $C_d$ | B | C | D |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **4. Dual System with Ductile/Special Moment Resisting Frame** *(capable of resisting at least 25% of prescribed seismic forces)* | Special Steel Concentrically Braced Frame | 7 | 2.5 | 5.5 | ✔️ | ✔️ | ✔️ |
+| | Steel Eccentrically Braced Frame | 8 | 2.5 | 4 | ✔️ | ✔️ | ✔️ |
+| | Special Reinforced Concrete Shear Wall | 7 | 2.5 | 5.5 | ✔️ | ✔️ | ✔️ |
+| | Ordinary Reinforced Concrete Shear Wall | 6 | 2.5 | 5 | ✔️ | ✔️ | * |
+| **5. Dual System with Moment Resisting Frame with Limited Ductility / Dual System with Intermediate Moment Resisting Frame** *(capable of resisting at least 25% of prescribed seismic forces)* | Special Steel Concentrically Braced Frame | 6 | 2.5 | 5 | ✔️ | ✔️ | ❌ |
+| | Special Reinforced Concrete Shear Wall | 6.5 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+| | Ordinary Reinforced Concrete Shear Wall | 5.5 | 2.5 | 4.5 | ✔️ | ✔️ | * |
+| **6. Shear Wall Frame Interactive System** | Shear Wall Frame Interactive System with Ordinary Reinforced Concrete Moment Frame and Ordinary Concrete Shear Wall | 4.5 | 2.5 | 4 | ✔️ | ❌ | ❌ |
+| **7. Steel Systems Not Specifically Detailed for Seismic Resistance** | Steel Systems Not Specifically Detailed for Seismic Resistance | 3 | 3 | 3 | ✔️ | ✔️ | ❌ |
+        """)
+        
+    # Footnotes
+    st.caption("**Note:** ✔️ = Permitted, ❌ = Not Permitted, **\*** = See Section 2.3.1.2, **++** = See Section 2.3.1.3")
+    st.caption("*(Note: Columns B, C, D refer to Seismic Design Categories ข, ค, ง respectively)*")
+
+    st.divider() 
+    
+    # Height Limitations Text
+    st.markdown("""
+    #### 2.3.1.2 Height Limitations for Seismic Design Category D
+
+    Lateral force-resisting systems comprising Ordinary Reinforced Concrete Shear Walls, Intermediate/Limited Ductility RC Moment Frames, or Intermediate Steel Moment Frames for Seismic Design Category D are permitted for buildings not exceeding the following heights:
+    
+    1. **40 meters** for Intermediate/Limited Ductility RC Moment Frames and Intermediate Steel Moment Frames.
+    2. **60 meters** for Ordinary Reinforced Concrete Shear Walls.
+    
+    Additionally, when calculating design strength, the seismic forces used for designing the structural members shall be increased by **40%**. For deformation calculation purposes, it is not necessary to increase the calculated seismic forces.
+    
+    In cases where the building height exceeds the specified limits, a limit state check (e.g., concrete and steel strain, shear, etc.) of structural members must be performed to ensure they are within acceptable criteria for the level of detailing used, under both the design earthquake and the maximum considered earthquake. Such checks must utilize methodologies and values accepted in structural engineering practice or be supported by test results confirming the members' performance.
+    """)
+
+# # สร้าง Expander
+# with st.expander("ตารางที่ 2.3-1 ค่าตัวประกอบปรับผลตอบสนองและข้อกำหนดเพิ่มเติม", expanded=False):
+    
+#     st.markdown("### ตารางที่ 2.3-1 ค่าตัวประกอบปรับผลตอบสนอง ($R$) ตัวประกอบกำลังส่วนเกิน ($\\Omega_0$) และ ตัวประกอบขยายค่าการโก่งตัว ($C_d$)")
+    
+#     # สร้าง Tabs เพื่อแบ่งหมวดหมู่ให้อ่านง่ายขึ้น
+#     tab1, tab2, tab3 = st.tabs(["หมวด 1 - 2", "หมวด 3", "หมวด 4 - 7"])
+    
+#     # แท็บที่ 1: หมวด 1 และ 2
+#     with tab1:
+#         st.markdown("""
+# | ระบบโครงสร้างโดยรวม | ระบบต้านแรงด้านข้าง | $R$ | $\\Omega_0$ | $C_d$ | ข | ค | ง |
+# |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+# | **1. ระบบกำแพงรับน้ำหนักบรรทุกแนวดิ่ง**<br>*(Bearing Wall System)* | กำแพงรับแรงเฉือนแบบธรรมดา (Ordinary Reinforced Concrete Shear Wall) | 4 | 2.5 | 4 | ✔️ | ✔️ | * |
+# | | กำแพงรับแรงเฉือนแบบที่มีการให้รายละเอียดพิเศษ (Special Reinforced Concrete Shear Wall) | 5 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+# | | กำแพงรับแรงเฉือนหล่อสำเร็จแบบธรรมดา (Ordinary Precast Shear Wall) ++ | 3 | 2.5 | 3 | ✔️ | ❌ | ❌ |
+# | | กำแพงรับแรงเฉือนหล่อสำเร็จแบบที่มีการให้รายละเอียดความเหนียวปานกลาง (Intermediate Precast Shear Wall) ++ | 4 | 2.5 | 4 | ✔️ | ✔️ | ❌ |
+# | **2. ระบบโครงอาคาร**<br>*(Building Frame System)* | โครงแกงแนงเหล็กแบบเยื้องศูนย์ที่ใช้จุดต่อแบบรับแรงดัดได้ (Steel Eccentrically Braced Frame with Moment-Resisting Connections) | 8 | 2 | 4 | ✔️ | ✔️ | ✔️ |
+# | | โครงแกงแนงเหล็กแบบเยื้องศูนย์ที่ใช้จุดต่อแบบรับแรงเฉือน (Steel Eccentrically Braced Frame with Non-Moment-Resisting Connections) | 7 | 2 | 4 | ✔️ | ✔️ | ✔️ |
+# | | โครงแกงแนงเหล็กแบบตรงศูนย์แบบให้รายละเอียดพิเศษ (Special Steel Concentric Braced Frame) | 6 | 2 | 5 | ✔️ | ✔️ | ✔️ |
+# | | โครงแกงแนงเหล็กแบบตรงศูนย์แบบธรรมดา (Ordinary Steel Concentric Braced Frame) | 3.5 | 2 | 3.5 | ✔️ | ✔️ | ❌ |
+# | | กำแพงรับแรงเฉือนแบบที่มีการให้รายละเอียดพิเศษ (Special Reinforced Concrete Shear Wall) | 6 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+# | | กำแพงรับแรงเฉือนแบบธรรมดา (Ordinary Reinforced Concrete Shear Wall) | 5 | 2.5 | 4.5 | ✔️ | ✔️ | * |
+# | | กำแพงรับแรงเฉือนหล่อสำเร็จแบบธรรมดา (Ordinary Precast Shear Wall) ++ | 4 | 2.5 | 4 | ✔️ | ❌ | ❌ |
+# | | กำแพงรับแรงเฉือนหล่อสำเร็จแบบที่มีการให้รายละเอียดความเหนียวปานกลาง (Intermediate Precast Shear Wall) ++ | 5 | 2.5 | 4.5 | ✔️ | ✔️ | ❌ |
+#         """)
+
+#     # แท็บที่ 2: หมวด 3
+#     with tab2:
+#         st.markdown("""
+# | ระบบโครงสร้างโดยรวม | ระบบต้านแรงด้านข้าง | $R$ | $\\Omega_0$ | $C_d$ | ข | ค | ง |
+# |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+# | **3. ระบบโครงต้านแรงดัด**<br>*(Moment Resisting Frame)* | โครงต้านแรงดัดเหล็กที่มีความเหนียวพิเศษ (Ductile/Special Steel Moment-Resisting Frame) | 8 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+# | | โครงถักต้านแรงดัดที่มีการให้รายละเอียดความเหนียวเป็นพิเศษ (Special Truss Moment Frame) | 7 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+# | | โครงต้านแรงดัดเหล็กที่มีความเหนียวปานกลาง (Intermediate Steel Moment Resisting Frame) | 4.5 | 3 | 4 | ✔️ | ✔️ | * |
+# | | โครงต้านแรงดัดเหล็กธรรมดา (Ordinary Steel Moment Resisting Frame) | 3.5 | 3 | 3 | ✔️ | ✔️ | ❌ |
+# | | โครงต้านแรงดัดคอนกรีตเสริมเหล็กที่มีความเหนียวพิเศษ (แบบหล่อในที่ หรือ แบบหล่อสำเร็จ) (Precast or Cast-in-Place Ductile/Special Reinforced Concrete Moment Resisting Frame) ++ | 8 | 3 | 5.5 | ✔️ | ✔️ | ✔️ |
+# | | โครงต้านแรงดัดคอนกรีตเสริมเหล็กที่มีความเหนียวปานกลางหรือความเหนียวจำกัด (Ductile RC Moment-Resisting Frame with Limited Ductility/ Intermediate RC Moment-Resisting Frame) | 5 | 3 | 4.5 | ✔️ | ✔️ | * |
+# | | โครงต้านแรงดัดคอนกรีตเสริมเหล็กแบบธรรมดา (Ordinary Reinforced Concrete Moment Resisting Frame) | 3 | 3 | 2.5 | ✔️ | ❌ | ❌ |
+#         """)
+
+#     # แท็บที่ 3: หมวด 4 ถึง 7
+#     with tab3:
+#         st.markdown("""
+# | ระบบโครงสร้างโดยรวม | ระบบต้านแรงด้านข้าง | $R$ | $\\Omega_0$ | $C_d$ | ข | ค | ง |
+# |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
+# | **4. ระบบโครงสร้างแบบผสมที่มีโครงต้านแรงดัดที่มีความเหนียวที่สามารถต้านทานแรงด้านข้างไม่น้อยกว่าร้อยละ 25 ของแรงที่กระทำกับอาคารทั้งหมด**<br>*(Dual System with Ductile/Special Moment Resisting Frame)* | ร่วมกับโครงแกงแนงเหล็กแบบตรงศูนย์แบบพิเศษ (Special Steel Concentrically Braced Frame) | 7 | 2.5 | 5.5 | ✔️ | ✔️ | ✔️ |
+# | | ร่วมกับโครงแกงแนงเหล็กแบบเยื้องศูนย์ (Steel Eccentrically Braced Frame) | 8 | 2.5 | 4 | ✔️ | ✔️ | ✔️ |
+# | | ร่วมกับกำแพงรับแรงเฉือนแบบที่มีการให้รายละเอียดพิเศษ (Special Reinforced Concrete Shear Wall) | 7 | 2.5 | 5.5 | ✔️ | ✔️ | ✔️ |
+# | | ร่วมกับกำแพงรับแรงเฉือนแบบธรรมดา (Ordinary Reinforced Concrete Shear Wall) | 6 | 2.5 | 5 | ✔️ | ✔️ | * |
+# | **5. ระบบโครงสร้างแบบผสมที่มีโครงต้านแรงดัดที่มีความเหนียวปานกลางหรือความเหนียวจำกัดที่สามารถต้านทานแรงด้านข้างไม่น้อยกว่าร้อยละ 25 ของแรงที่กระทำกับอาคารทั้งหมด**<br>*(Dual System with Moment Resisting Frame with Limited Ductility / Dual System with Intermediate Moment Resisting Frame)* | ร่วมกับโครงแกงแนงเหล็กแบบตรงศูนย์แบบพิเศษ (Special Steel Concentrically Braced Frame) | 6 | 2.5 | 5 | ✔️ | ✔️ | ❌ |
+# | | ร่วมกับกำแพงรับแรงเฉือนแบบที่มีการให้รายละเอียดพิเศษ (Special Reinforced Concrete Shear Wall) | 6.5 | 2.5 | 5 | ✔️ | ✔️ | ✔️ |
+# | | ร่วมกับกำแพงรับแรงเฉือนแบบธรรมดา (Ordinary Reinforced Concrete Shear Wall) | 5.5 | 2.5 | 4.5 | ✔️ | ✔️ | * |
+# | **6. ระบบปฏิสัมพันธ์**<br>*(Shear Wall Frame Interactive System)* | ระบบปฏิสัมพันธ์ระหว่างกำแพงรับแรงเฉือนและโครงต้านแรงดัดแบบธรรมดาที่ไม่มีการให้รายละเอียดความเหนียว (Shear Wall Frame Interactive System with Ordinary Reinforced Concrete Moment Frame and Ordinary Concrete Shear Wall) | 4.5 | 2.5 | 4 | ✔️ | ❌ | ❌ |
+# | **7. ระบบโครงสร้างเหล็กที่ไม่มีการให้รายละเอียดสำหรับรับแรงแผ่นดินไหว**<br>*(Steel Systems Not Specifically Detailed for Seismic Resistance)* | ระบบโครงสร้างเหล็กที่ไม่มีการให้รายละเอียดสำหรับรับแรงแผ่นดินไหว | 3 | 3 | 3 | ✔️ | ✔️ | ❌ |
+#         """)
+        
+#     # เชิงอรรถ (อยู่นอก Tabs เพื่อให้แสดงผลตลอดเวลา)
+#     st.caption("**หมายเหตุ:** ✔️ = ใช้ได้, ❌ = ห้ามใช้, **\*** = ดูหัวข้อ 2.3.1.2, **++** = ดูหัวข้อ 2.3.1.3")
+
+#     st.divider() # ขีดเส้นคั่น
+    
+#     # ข้อกำหนดด้านความสูง (อยู่นอก Tabs เพื่อให้แสดงผลตลอดเวลา)
+#     st.markdown("""
+#     #### 2.3.1.2 ข้อกำหนดด้านความสูงสำหรับประเภทการออกแบบต้านทานการสั่นสะเทือนของแผ่นดินไหว ง
+
+#     ระบบต้านแรงด้านข้างที่ประกอบด้วย กำแพงรับแรงเฉือนแบบธรรมดา โครงต้านแรงดัดคอนกรีตเสริมเหล็กที่มีความเหนียวปานกลางหรือความเหนียวจำกัด หรือ โครงต้านแรงดัดเหล็กที่มีความเหนียวปานกลาง สำหรับประเภทการออกแบบต้านทานการสั่นสะเทือนของแผ่นดินไหว ง สามารถใช้ได้กับอาคารที่มีความสูงไม่เกินค่าต่อไปนี้
+    
+#     1. **40 เมตร** สำหรับ โครงต้านแรงดัดคอนกรีตเสริมเหล็กที่มีความเหนียวปานกลางหรือความเหนียวจำกัด และ โครงต้านแรงดัดเหล็กที่มีความเหนียวปานกลาง  
+#     2. **60 เมตร** สำหรับ กำแพงรับแรงเฉือนแบบธรรมดา  
+    
+#     ทั้งนี้ในการคำนวณออกแบบด้านกำลัง ให้เพิ่มค่าแรงแผ่นดินไหวที่ใช้ในการออกแบบองค์อาคารอีก **ร้อยละ 40** ในส่วนการคำนวณค่าการเสียรูป ไม่จำเป็นต้องเพิ่มค่าแรงที่ใช้ในการคำนวณ
+    
+#     ในกรณีที่อาคารมีความสูงมากกว่าที่กำหนด ต้องมีการตรวจสอบ ภาวะขีดสุด (Limit State) ค่าความเครียดของคอนกรีตและเหล็กเสริม แรงเฉือน ฯลฯ ขององค์อาคาร ว่ามีค่าอยู่ในเกณฑ์ที่ยอมรับได้สำหรับระดับการให้รายละเอียดขององค์อาคารที่ใช้ ภายใต้แผ่นดินไหวสำหรับออกแบบ และภายใต้แผ่นดินไหวรุนแรงสูงสุดที่พิจารณา ทั้งนี้การตรวจสอบดังกล่าวต้องใช้วิธีการและค่าต่าง ๆ เป็นไปตามวิธีและค่าที่เป็นที่ยอมรับในทางวิศวกรรม หรือมีผลทดสอบที่ยืนยันถึงสมรรถนะขององค์อาคาร
+#     """)
 st.write('---')
 
 # Section 8: Design Response Spectrum
