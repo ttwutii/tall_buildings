@@ -769,6 +769,7 @@ else:
                 a_w_top = a_w 
             
             results.append({
+                "Floor": floor_zs.index(z) + 1,
                 "Height (z)": z,
                 "Wind Area (m²)": Area,
                 "P_across (kN)": P_L / 1000,
