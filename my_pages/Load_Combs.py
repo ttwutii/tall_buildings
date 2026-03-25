@@ -169,7 +169,7 @@ with tab2:
         if is_excepted:
             st.error("⚠️ **No Live Load Reduction Allowed** (Clause 14).")
         else:
-            floor_from_roof = st.number_input("Number of floors down from the roof:", min_value=0, max_value=20, value=0, step=1)
+            floor_from_roof = st.number_input("Number of floors down from the roof:", min_value=0, max_value=300, value=0, step=1)
             reduction = 0
             if floor_from_roof <= 2: reduction = 0
             elif floor_from_roof == 3: reduction = 10
