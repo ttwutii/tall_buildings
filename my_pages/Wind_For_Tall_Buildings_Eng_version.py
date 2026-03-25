@@ -616,6 +616,83 @@ slenderness_check = H / math.sqrt(Wx * Wy) if (Wx * Wy) > 0 else 0
 if slenderness_check < 3.0:
     st.info(f"💡 **Building Slenderness Ratio:** $H/\\sqrt{{WD}} = {slenderness_check:.2f}$")
     st.success("✅ **Building is not slender enough ($< 3.0$). Across-wind and torsional effects are not significant.** \n\n**➡️ You can safely skip this chapter.**")
+    st.header(" Load Combinations ")
+
+
+    # Main Title
+    st.subheader("Wind Load Cases & Torsional Combinations")
+    st.markdown("Combinations of wind forces acting along the principal axes and torsional moments (Based on Figure 2.2).")
+
+    st.divider()
+
+    # --- CASE 1 (ก) ---
+    with st.container():
+        st.subheader("Case 1 (ก): Full Wind Load, No Torsion")
+        st.markdown("Maximum wind pressure applied to one principal axis at a time.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("**X-Direction Only**")
+            st.latex(r"p_{WX} \quad \text{(Windward)}")
+            st.latex(r"p_{LX} \quad \text{(Leeward)}")
+        with col2:
+            st.info("**Y-Direction Only**")
+            st.latex(r"p_{WY} \quad \text{(Windward)}")
+            st.latex(r"p_{LY} \quad \text{(Leeward)}")
+
+    st.divider()
+
+    # --- CASE 2 (ข) ---
+    with st.container():
+        st.subheader("Case 2 (ข): 75% Wind Load + Torsion")
+        st.markdown("75% of the wind pressure applied to one axis at a time, plus a torsional moment.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("**X-Direction + Torsion**")
+            st.markdown("Pressures: $0.75p_{WX}$, $0.75p_{LX}$")
+            st.latex(r"M_{TX} = 0.75(p_{WX} + p_{LX})B_X e_X")
+            st.latex(r"e_X = \pm 0.15B_X")
+        with col2:
+            st.info("**Y-Direction + Torsion**")
+            st.markdown("Pressures: $0.75p_{WY}$, $0.75p_{LY}$")
+            st.latex(r"M_{TY} = 0.75(p_{WY} + p_{LY})B_Y e_Y")
+            st.latex(r"e_Y = \pm 0.15B_Y")
+
+    st.divider()
+
+    # --- CASE 3 (ค) ---
+    with st.container():
+        st.subheader("Case 3 (ค): 75% Combined Wind Load, No Torsion")
+        st.markdown("Wind acting simultaneously along both principal axes at 75% capacity.")
+        
+        st.success("**Simultaneous Bi-directional Pressures**")
+        st.latex(r"X\text{-Axis: } 0.75p_{WX}, \quad 0.75p_{LX}")
+        st.latex(r"Y\text{-Axis: } 0.75p_{WY}, \quad 0.75p_{LY}")
+
+    st.divider()
+
+    # --- CASE 4 (ง) ---
+    with st.container():
+        st.subheader("Case 4 (ง): 56.3% Combined Wind Load + Torsion")
+        st.markdown("Simultaneous wind forces along both axes at 56.3% capacity, plus combined torsional moments.")
+        
+        st.warning("**Simultaneous Pressures & Torsion**")
+        st.latex(r"X\text{-Axis Pressures: } 0.563p_{WX}, \quad 0.563p_{LX}")
+        st.latex(r"Y\text{-Axis Pressures: } 0.563p_{WY}, \quad 0.563p_{LY}")
+        
+        st.markdown("**Combined Torsional Moment:**")
+        st.latex(r"M_T = 0.563(p_{WX} + p_{LX})B_X e_X + 0.563(p_{WY} + p_{LY})B_Y e_Y")
+        
+        col_e1, col_e2 = st.columns(2)
+        with col_e1:
+            st.latex(r"e_X = \pm 0.15B_X")
+        with col_e2:
+            st.latex(r"e_Y = \pm 0.15B_Y")
+
+    st.divider()
+    with st.expander("📌 View Load Combination Details"):
+        st.image("combswind1.png", caption="Combination of wind load effects: along-wind, across-wind, and torsional moment. (DPT 1311-50, Section 2.8)")
     
     # The rest of Chapter 4 will NOT be rendered.
 else:
@@ -784,7 +861,7 @@ else:
             st.dataframe(df_ch4_x.round(3), hide_index=True, use_container_width=True)
             st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_x:.4f}` m/s²")
             
-            st.markdown("##### Load Combinations ")
+            st.header("Load Combinations ")
             st.markdown("""
             * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
             * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
@@ -802,7 +879,7 @@ else:
             st.dataframe(df_ch4_y.round(3), hide_index=True, use_container_width=True)
             st.info(f"  **Top Story Acceleration ($a_w$):** `{a_w_top_y:.4f}` m/s²")
             
-            st.markdown("##### Load Combinations ")
+            st.header("Load Combinations ")
             st.markdown("""
             * **Case A:** $1.0 P_{along} + 0.4 P_{across} + 0.4 M_T$
             * **Case B:** $(0.4 + 0.6/C_g) P_{along} + 1.0 P_{across} + 1.0 M_T$
