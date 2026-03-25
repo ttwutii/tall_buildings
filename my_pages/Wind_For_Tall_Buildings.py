@@ -437,12 +437,6 @@ else:
             st.dataframe(df_ch4_x.round(3), hide_index=True, use_container_width=True)
             st.info(f"**Top Story Across-wind Acceleration ($a_w$):** `{a_w_top_x:.4f}` m/s²")
             
-            st.download_button(
-                label="📥 Download Across-wind & Torsion Results (X-axis)",
-                data=convert_df_to_csv(df_ch4_x.round(3)),
-                file_name='AcrossWind_Torsion_X.csv',
-                mime='text/csv'
-            )
         else:
             st.error("🛑 Not applicable for X-axis.")
 
@@ -458,11 +452,6 @@ else:
             st.dataframe(df_ch4_y.round(3), hide_index=True, use_container_width=True)
             st.info(f"**Top Story Across-wind Acceleration ($a_w$):** `{a_w_top_y:.4f}` m/s²")
             
-            st.download_button(
-                label="📥 Download Across-wind & Torsion Results (Y-axis)",
-                data=convert_df_to_csv(df_ch4_y.round(3)),
-                file_name='AcrossWind_Torsion_Y.csv',
-                mime='text/csv'
-            )
+         
         else:
             st.error("🛑 Not applicable for Y-axis.")
