@@ -6,7 +6,7 @@ ref_code_page = st.Page("my_pages/Reference_Codes.py", title="Reference Code", i
 load_combs = st.Page("my_pages/Load_Combs.py", title="Load Combinations", icon="⚖️")
 
 #Eng_version
-wind_tall_eng = st.Page("my_pages/Wind_For_Tall_Buildings_Eng_version.py", title="Wind Load - Tall Building ", icon="🏙️")
+wind_tall_eng = st.Page("my_pages/Wind_For_Tall_Buildings.py", title="Wind Load - Tall Building ", icon="🏙️")
 earthquake_eng = st.Page("my_pages/Earth_Quake_Eng_version.py", title="Earthquake Load", icon="🌍")
 
 # 2. จัดกลุ่มเมนู (แก้ชื่อหมวดหมู่และเพิ่มหน้าได้ตามต้องการ)

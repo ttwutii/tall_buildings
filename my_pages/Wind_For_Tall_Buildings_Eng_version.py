@@ -512,6 +512,7 @@ if rho_B > 0 and damping_ratio > 0 and Ce_H > 0:
 else:
     a_Dx = 0
 
+
 st.markdown(f'''
 - **Maximum lateral deflection at the top, X-axis ($\\Delta_x$)**: `{Delta_x:.4f}` m (Allowable limit = $H/500$ = {H/500:.4f} m) 
   - {"✅ **Pass**" if Delta_x <= H/500 else "❌ **Fail**"}
