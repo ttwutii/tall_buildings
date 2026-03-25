@@ -128,10 +128,10 @@ st.write("---")
 st.write('### 6. Dynamic Properties & Gust Response Factor ($C_g$)')
 
 col1, col2, col3, col4, col5 = st.columns(5)
-with col1: n_Dx = st.number_input("Freq. X-axis ($n_{Dx}$) [Hz]", value=0.20, step=0.01)
-with col2: n_Dy = st.number_input("Freq. Y-axis ($n_{Dy}$) [Hz]", value=0.25, step=0.01)
+with col1: n_Dx = st.number_input("Freq. X-axis ($n_{Dx}$) [Hz]", value=44.0/H if H>0 else 1.0, step=0.01, format="%.2f")
+with col2: n_Dy = st.number_input("Freq. Y-axis ($n_{Dy}$) [Hz]", value=44.0/H if H>0 else 1.0, step=0.01, format="%.2f")
 with col3: damping_ratio = st.number_input("Damping ($\\beta_D, \\beta_W$)", value=0.015, step=0.001, format="%.3f")
-with col4: n_T = st.number_input("Torsional Freq. ($n_T$) [Hz]", value=0.30, step=0.01)
+with col4: n_T = st.number_input("Torsional Freq. ($n_T$) [Hz]", value=55.0/H if H>0 else 1.0, step=0.01, format="%.2f")
 with col5: beta_T = st.number_input("Torsional Damping ($\\beta_T$)", value=0.015, step=0.001, format="%.3f")
 
 with st.expander("💡 Across-wind Frequency Logic (DPT 1311-50)"):
@@ -164,8 +164,8 @@ Cg_x, K_x, s_x, F_x, gp_x = calculate_Cg_detailed(H, Wy, V_bar, n_Dx, damping_ra
 Cg_y, K_y, s_y, F_y, gp_y = calculate_Cg_detailed(H, Wx, V_bar, n_Dy, damping_ratio, terrain_type, Ce_H)
 
 col1, col2 = st.columns(2)
-col1.info(f"**Wind on X-axis** (W = {Wy}m, $n_D$ = {n_Dx}Hz)\n\n$C_{{gx}}={Cg_x:.3f}$")
-col2.info(f"**Wind on Y-axis** (W = {Wx}m, $n_D$ = {n_Dy}Hz)\n\n$C_{{gy}}={Cg_y:.3f}$")
+col1.info(f"**Wind on X-axis** (W = {Wy}m, $n_D$ = {n_Dx:.2f}Hz)\n\n$C_{{gx}}={Cg_x:.3f}$")
+col2.info(f"**Wind on Y-axis** (W = {Wx}m, $n_D$ = {n_Dy:.2f}Hz)\n\n$C_{{gy}}={Cg_y:.3f}$")
 st.write("---")
 
 # ==========================================
@@ -344,10 +344,10 @@ if rho_B > 0 and n_Dy > 0 and Wy > 0:
 
 col_chk1, col_chk2 = st.columns(2)
 with col_chk1:
-    st.markdown(f"####  Wind on X-axis (using $n_{{Dx}}$={n_Dx}Hz)")
+    st.markdown(f"####  Wind on X-axis (using $n_{{Dx}}$={n_Dx:.2f}Hz)")
     st.markdown(f"- **Lateral deflection ($\Delta_x$)**: `{Delta_x:.4f}` m (Limit: {H/500:.4f} m)\n- **Peak acceleration ($a_{{Dx}}$)**: `{a_Dx:.4f}` m/s²")
 with col_chk2:
-    st.markdown(f"####  Wind on Y-axis (using $n_{{Dy}}$={n_Dy}Hz)")
+    st.markdown(f"####  Wind on Y-axis (using $n_{{Dy}}$={n_Dy:.2f}Hz)")
     st.markdown(f"- **Lateral deflection ($\Delta_y$)**: `{Delta_y:.4f}` m (Limit: {H/500:.4f} m)\n- **Peak acceleration ($a_{{Dy}}$)**: `{a_Dy:.4f}` m/s²")
 
 st.write("---")
@@ -455,10 +455,10 @@ else:
 
     tab_chk_x, tab_chk_y = st.tabs(["Wind Direction: X-axis", "Wind Direction: Y-axis"])
     with tab_chk_x:
-        st.markdown(f"*Wind acting on X-axis (Width $W = W_y$, Depth $D = W_x$, using $n_W = n_{{Dy}} = {n_Dy}$ Hz)*")
+        st.markdown(f"*Wind acting on X-axis (Width $W = W_y$, Depth $D = W_x$, using $n_W = n_{{Dy}} = {n_Dy:.2f}$ Hz)*")
         can_calc_x = check_section_4_1(H, W=Wy, D=Wx, V_H=V_H, n_W=n_Dy, n_T=n_T)
     with tab_chk_y:
-        st.markdown(f"*Wind acting on Y-axis (Width $W = W_x$, Depth $D = W_y$, using $n_W = n_{{Dx}} = {n_Dx}$ Hz)*")
+        st.markdown(f"*Wind acting on Y-axis (Width $W = W_x$, Depth $D = W_y$, using $n_W = n_{{Dx}} = {n_Dx:.2f}$ Hz)*")
         can_calc_y = check_section_4_1(H, W=Wx, D=Wy, V_H=V_H, n_W=n_Dx, n_T=n_T)
 
     # ==========================================
