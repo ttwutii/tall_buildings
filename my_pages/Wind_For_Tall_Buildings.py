@@ -210,6 +210,9 @@ col_cp1.info(f"**Wind parallel to X-axis ($D = {Wx}$)**\n- Windward ($C_p$): {C_
 col_cp2.info(f"**Wind parallel to Y-axis ($D = {Wy}$)**\n- Windward ($C_p$): {C_py_wind:.2f}\n- Leeward ($C_p$): {C_py_lee:.2f}")
 col_cp3.warning("**Side Walls and Roof**\n- Side Walls ($C_p$): -0.70 \n- Roof ($C_p$): -1.0 to -0.5 \n- Wall edges ($C_p^*$): -1.20 ")
 
+with st.expander("📌 View Figure $C_p$ and $C_p^*$"):
+    st.image("Cp_tallbuildings.png", caption="Pressure Coefficients ($C_p$) and Local Pressure Coefficients ($C_p^*$) (Source: DPT 1311-50, Figure B.9)")
+
 
 df_c_pi = pd.DataFrame({
     'Condition': ['Without large openings', 'With unevenly distributed leakage', 'With large openings'],
