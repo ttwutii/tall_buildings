@@ -582,7 +582,7 @@ with col1:
 
 st.write('---')
 
-with st.expander("Show Seismic Design Calculations"):
+with st.expander("Show Seismic Design Calculations (Equivalent Static Method)", expanded=False):
 # Section 9: Base Shear
     st.write('### 9. Base Shear, $V$')
     W = Witotal_list[-1] if len(Witotal_list) > 0 else 0
