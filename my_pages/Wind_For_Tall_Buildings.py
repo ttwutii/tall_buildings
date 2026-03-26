@@ -373,74 +373,40 @@ if slenderness_check < 3.0:
     st.subheader("Wind Load Cases & Torsional Combinations")
     st.markdown("Combinations of wind forces acting along the principal axes and torsional moments (Based on Figure 2.2).")
 
-    st.divider()
-
-    # --- CASE 1 (ก) ---
-    with st.container():
-        st.subheader("Case 1 (ก): Full Wind Load, No Torsion")
-        st.markdown("Maximum wind pressure applied to one principal axis at a time.")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("**X-Direction Only**")
-            st.latex(r"p_{WX} \quad \text{(Windward)}")
-            st.latex(r"p_{LX} \quad \text{(Leeward)}")
-        with col2:
-            st.info("**Y-Direction Only**")
-            st.latex(r"p_{WY} \quad \text{(Windward)}")
-            st.latex(r"p_{LY} \quad \text{(Leeward)}")
+    # --- CASE 1 ---
+    st.write("##### Case 1: Full Design Wind Load (No Torsion)")
+    st.write("**Direction X only:** $p_{WX}$ (Windward), $p_{LX}$ (Leeward)")
+    st.write("**Direction Y only:** $p_{WY}$ (Windward), $p_{LY}$ (Leeward)")
 
     st.divider()
 
-    # --- CASE 2 (ข) ---
-    with st.container():
-        st.subheader("Case 2 (ข): 75% Wind Load + Torsion")
-        st.markdown("75% of the wind pressure applied to one axis at a time, plus a torsional moment.")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("**X-Direction + Torsion**")
-            st.markdown("Pressures: $0.75p_{WX}$, $0.75p_{LX}$")
-            st.latex(r"M_{TX} = 0.75(p_{WX} + p_{LX})B_X e_X")
-            st.latex(r"e_X = \pm 0.15B_X")
-        with col2:
-            st.info("**Y-Direction + Torsion**")
-            st.markdown("Pressures: $0.75p_{WY}$, $0.75p_{LY}$")
-            st.latex(r"M_{TY} = 0.75(p_{WY} + p_{LY})B_Y e_Y")
-            st.latex(r"e_Y = \pm 0.15B_Y")
+    # --- CASE 2 ---
+    st.write("##### Case 2: 75% Wind Load + Torsion")
+    st.write(" **X-Direction + Torsion**")
+    st.write("Pressures: $0.75p_{WX}$, $0.75p_{LX}$")
+    st.write("Torsional Moment: $M_{TX} = 0.75(p_{WX} + p_{LX})B_X e_X$ where $e_X = \pm 0.15B_X$")
+
+    st.write(" **Y-Direction + Torsion**")
+    st.write("Pressures: $0.75p_{WY}$, $0.75p_{LY}$")
+    st.write("Torsional Moment: $M_{TY} = 0.75(p_{WY} + p_{LY})B_Y e_Y$ where $e_Y = \pm 0.15B_Y$")
 
     st.divider()
 
-    # --- CASE 3 (ค) ---
-    with st.container():
-        st.subheader("Case 3 (ค): 75% Combined Wind Load, No Torsion")
-        st.markdown("Wind acting simultaneously along both principal axes at 75% capacity.")
-        
-        st.success("**Simultaneous Bi-directional Pressures**")
-        st.latex(r"X\text{-Axis: } 0.75p_{WX}, \quad 0.75p_{LX}")
-        st.latex(r"Y\text{-Axis: } 0.75p_{WY}, \quad 0.75p_{LY}")
+    # --- CASE 3 ---
+    st.write("##### Case 3: 75% Combined Wind Load (No Torsion)")
+    st.write("Wind acting simultaneously along both principal axes at 75% capacity.")
+    st.write("X-Axis: $0.75p_{WX}$, $0.75p_{LX}$")
+    st.write("Y-Axis: $0.75p_{WY}$, $0.75p_{LY}$")
 
     st.divider()
 
-    # --- CASE 4 (ง) ---
-    with st.container():
-        st.subheader("Case 4 (ง): 56.3% Combined Wind Load + Torsion")
-        st.markdown("Simultaneous wind forces along both axes at 56.3% capacity, plus combined torsional moments.")
-        
-        st.warning("**Simultaneous Pressures & Torsion**")
-        st.latex(r"X\text{-Axis Pressures: } 0.563p_{WX}, \quad 0.563p_{LX}")
-        st.latex(r"Y\text{-Axis Pressures: } 0.563p_{WY}, \quad 0.563p_{LY}")
-        
-        st.markdown("**Combined Torsional Moment:**")
-        st.latex(r"M_T = 0.563(p_{WX} + p_{LX})B_X e_X + 0.563(p_{WY} + p_{LY})B_Y e_Y")
-        
-        col_e1, col_e2 = st.columns(2)
-        with col_e1:
-            st.latex(r"e_X = \pm 0.15B_X")
-        with col_e2:
-            st.latex(r"e_Y = \pm 0.15B_Y")
-
-    st.divider()
+    # --- CASE 4 ---
+    st.write("##### Case 4: 56.3% Combined Wind Load + Torsion")
+    st.write("Simultaneous wind forces along both axes at 56.3% capacity, plus combined torsion.")
+    st.write("X-Axis: $0.563p_{WX}$, $0.563p_{LX}$")
+    st.write("Y-Axis: $0.563p_{WY}$, $0.563p_{LY}$")
+    st.write("Combined Torsion: $M_T = 0.563(p_{WX} + p_{LX})B_X e_X + 0.563(p_{WY} + p_{LY})B_Y e_Y$")
+    st.write("Where $e_X = \pm 0.15B_X$ and $e_Y = \pm 0.15B_Y$")
     with st.expander("📌 View Load Combination Details"):
         st.image("combswind1.png", caption="Combination of wind load effects: along-wind, across-wind, and torsional moment. (DPT 1311-50, Section 2.8)")
 else:
