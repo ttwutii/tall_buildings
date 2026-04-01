@@ -308,7 +308,7 @@ df_walls_cc = pd.DataFrame(wall_data)
 
 # สำหรับหลังคาก็ใช้ Local Cp* คงที่ตามที่มาตรฐานระบุเช่นกัน
 roof_zones = [
-    {"Zone": "General Roof", "Cp": -0.7}, 
+    {"Zone": "General Roof", "Cp": -1.0}, 
     {"Zone": "Edge Roof", "Cp": -1.5}, 
     {"Zone": "Corner Roof", "Cp": -2.3}
 ]
@@ -453,7 +453,7 @@ else:
             F_L = (term_FL1 * term_FL2) + (term_FL1_2 * term_FL2_2) 
             
         R_L = (math.pi * F_L) / (4 * beta_W) 
-        P_L_per_m = 3 * I_w * q_H * C_L_prime * W * (z / H) * g_L * math.sqrt(1 + R_L) 
+        P_L_per_m = 3 * I_w * q_H * C_L_prime * (W/D) * (z / H) * g_L * math.sqrt(1 + R_L) 
         
         # ⚠️ อัตราเร่ง a_w ต้องใช้ Iw = 0.75 เสมอ ตามมาตรฐาน มยผ.
         a_w = 3 * 0.75 * q_H * C_L_prime * g_L * (W / (rho_B * W * D)) * (z / H) * math.sqrt(R_L) if rho_B > 0 else 0
@@ -509,14 +509,16 @@ else:
                 latest_aw_det = aw_det
                 latest_t_det = t_det
             
-            P_story_kN = (P_L_per_m * h_story) / 1000
-            M_story_kNm = (M_T_per_m * h_story) / 1000
+            P_story_kN = (P_L_per_m ) / 1000
+            M_story_kNm = (M_T_per_m) / 1000
             
             results.append({
                 "Story": floor_zs.index(z) + 1,
                 "Height z (m)": z,
-                "P_across (kN)": P_story_kN,
-                "M_torsion (kN-m)": M_story_kNm,
+                "Pressure_across (kN/m²)": P_story_kN,
+                "M_torsion (kN-m )": M_story_kNm,
+                "P_across per story (kN)": P_story_kN * h_story * D  # Force per story = Pressure * Area (h_story * D)
+                
             })
         return pd.DataFrame(results), a_w_top, latest_aw_det, latest_t_det
     
@@ -528,7 +530,7 @@ else:
             
             with st.expander("🔍 View Detailed Parameters "):
                 c1, c2 = st.columns(2)
-                c1.markdown(f"**Across-wind Params:**\n- $V_H={V_H:.2f}, q_H={q_H:.1f}$\n- $D/W={(Wx/Wy):.3f}$\n- $C'_L={det_aw_x['C_L_prime']:.4f}$\n- $g_L={det_aw_x['g_L']:.3f}$\n- $\\beta_1={det_aw_x['beta_1']:.3f}, \\lambda_1={det_aw_x['lambda_1']:.3f}$\n- $F_L={det_aw_x['F_L']:.4f}, R_L={det_aw_x['R_L']:.2f}$")
+                c1.markdown(f"**Across-wind Params:**\n- $V_H={V_H:.2f} m/s, q_H={q_H:.1f} N/m² $\n- $D/W={(Wx/Wy):.3f}$\n- $C'_L={det_aw_x['C_L_prime']:.4f}$\n- $g_L={det_aw_x['g_L']:.3f}$\n- $\\beta_1={det_aw_x['beta_1']:.3f}, \\lambda_1={det_aw_x['lambda_1']:.3f}$\n- $F_L={det_aw_x['F_L']:.4f}, R_L={det_aw_x['R_L']:.2f}$")
                 c2.markdown(f"**Torsional Params:**\n- $V_T^*={det_t_x['V_T_star']:.2f}$\n- $C'_T={det_t_x['C_T_prime']:.4f}$\n- $g_T={det_t_x['g_T']:.3f}$\n- $F_T={det_t_x['F_T']:.4f}, R_T={det_t_x['R_T']:.2f}$")
 
             st.dataframe(df_ch4_x.round(3), hide_index=True, use_container_width=True)
@@ -554,7 +556,7 @@ else:
             
             with st.expander("🔍 View Detailed Parameters "):
                 c1, c2 = st.columns(2)
-                c1.markdown(f"**Across-wind Params:**\n- $V_H={V_H:.2f}, q_H={q_H:.1f}$\n- $D/W={(Wy/Wx):.3f}$\n- $C'_L={det_aw_y['C_L_prime']:.4f}$\n- $g_L={det_aw_y['g_L']:.3f}$\n- $\\beta_1={det_aw_y['beta_1']:.3f}, \\lambda_1={det_aw_y['lambda_1']:.3f}$\n- $F_L={det_aw_y['F_L']:.4f}, R_L={det_aw_y['R_L']:.2f}$")
+                c1.markdown(f"**Across-wind Params:**\n- $V_H={V_H:.2f} m/s, q_H={q_H:.1f} N/m² $\n- $D/W={(Wy/Wx):.3f}$\n- $C'_L={det_aw_y['C_L_prime']:.4f}$\n- $g_L={det_aw_y['g_L']:.3f}$\n- $\\beta_1={det_aw_y['beta_1']:.3f}, \\lambda_1={det_aw_y['lambda_1']:.3f}$\n- $F_L={det_aw_y['F_L']:.4f}, R_L={det_aw_y['R_L']:.2f}$")
                 c2.markdown(f"**Torsional Params:**\n- $V_T^*={det_t_y['V_T_star']:.2f}$\n- $C'_T={det_t_y['C_T_prime']:.4f}$\n- $g_T={det_t_y['g_T']:.3f}$\n- $F_T={det_t_y['F_T']:.4f}, R_T={det_t_y['R_T']:.2f}$")
 
             st.dataframe(df_ch4_y.round(3), hide_index=True, use_container_width=True)
