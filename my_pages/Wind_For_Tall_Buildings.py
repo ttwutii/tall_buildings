@@ -265,68 +265,92 @@ with tab2:
 
 st.write("---")
 
+
 # ==========================================
-# 8. Wind Load for Components & Cladding (C&C)
+# 9. Design Wind Pressures for Exterior Walls and Roofs (Components & Cladding)
 # ==========================================
 st.write('### 9. Design Wind Pressures for Exterior Walls and Roofs (Components & Cladding)')
 
-Cg_cc = 2.5
-Cgi_cc = 2.0
+# อ้างอิงตัวอย่างที่ 4 และมาตรฐาน มยผ. 1311-50
+Cg_cc = 2.5   # ค่าประกอบการกระโชกสำหรับผนังและหลังคา
+Cgi_cc = 2.0  # ค่าประกอบการกระโชกสำหรับแรงดันภายใน
+Ce_05H = calculate_Ce(0.5 * H, terrain_type) 
+Ce_H = calculate_Ce(H, terrain_type)
+
+# คำนวณแรงดันภายในสุทธิ (ต้องคิดทั้งกรณีบวกและลบ)
 p_int_minus = I_w * q * Ce_05H * Cgi_cc * C_pi_minus
 p_int_plus = I_w * q * Ce_05H * Cgi_cc * C_pi_plus
 
 def get_max_net_pressures(p_ext):
+    """คำนวณแรงสุทธิสูงสุด (แรงอัดเข้า) และต่ำสุด (แรงดูดออก) โดยรวมผลของ Cpi แล้ว"""
     net_1 = p_ext - p_int_minus
     net_2 = p_ext - p_int_plus
+    # แรงอัดเข้าหาผิว (Inward) จะเป็นค่าบวกที่มากที่สุด
+    # แรงดูดออกจากผิว (Suction) จะเป็นค่าลบที่มากที่สุด
     return max(net_1, net_2, 0), min(net_1, net_2, 0)
 
-# 👉 แก้ไข: ดึงค่า Cp วิกฤต (Worst-case) จากที่คำนวณผ่านฟังก์ชันมาแล้ว เพื่อให้รองรับอาคารทุกสัดส่วน (H/D)
-Cp_windward_max = max(C_px_wind, C_py_wind)
-Cp_leeward_min = min(C_px_lee, C_py_lee) # ใช้ min เพื่อหาค่าติดลบที่มากที่สุด (แรงดูดสูงสุด)
+# ดึงค่า Cp วิกฤตจาก MWFRS มาประยุกต์ใช้ (สำหรับ Windward และ Leeward)
+Cp_windward_max = max(C_px_wind, C_py_wind, 0.8) # มักไม่ต่ำกว่า 0.8 สำหรับ C&C
+Cp_leeward_min = min(C_px_lee, C_py_lee, -0.5)  # มักไม่เกิน -0.5 สำหรับ C&C
 
 wall_data = []
 for z in Floor_list:
     Ce_z = calculate_Ce(z, terrain_type)
     
-    # ⚠️ แทนที่ 0.8 และ -0.5 ด้วยตัวแปรที่ผ่านฟังก์ชัน get_Cp... มาแล้ว
-    in_w, suc_w = get_max_net_pressures(I_w * q * Ce_z * Cg_cc * Cp_windward_max) 
-    in_l, suc_l = get_max_net_pressures(I_w * q * Ce_05H * Cg_cc * Cp_leeward_min) 
+    # 1. ด้านต้นลม (Windward) - ใช้ Ce(z)
+    p_ext_w = I_w * q * Ce_z * Cg_cc * Cp_windward_max
+    in_w, _ = get_max_net_pressures(p_ext_w)
     
-    # สำหรับ Side General และ Side Edge มาตรฐานระบุเป็นสัมประสิทธิ์เฉพาะที่ (Local Cp*) คงที่คือ -0.7 และ -1.2
-    in_s, suc_s = get_max_net_pressures(I_w * q * Ce_H * Cg_cc * -0.7) 
-    in_se, suc_se = get_max_net_pressures(I_w * q * Ce_H * Cg_cc * -1.2) 
+    # 2. ด้านท้ายลม (Leeward) - ใช้ Ce(0.5H)
+    p_ext_l = I_w * q * Ce_05H * Cg_cc * Cp_leeward_min
+    _, suc_l = get_max_net_pressures(p_ext_l)
+    
+    # 3. กลางผนังด้านข้าง (Middle Side Wall) - ใช้ Ce(H) และ Cp* = -0.9 ตามตัวอย่างที่ 4
+    p_ext_s_mid = I_w * q * Ce_H * Cg_cc * -0.9
+    _, suc_s_mid = get_max_net_pressures(p_ext_s_mid)
+    
+    # 4. ขอบผนังด้านข้าง (Edge Side Wall) - ใช้ Ce(H) และ Cp* = -1.2 ตามตัวอย่างที่ 4
+    p_ext_s_edge = I_w * q * Ce_H * Cg_cc * -1.2
+    _, suc_s_edge = get_max_net_pressures(p_ext_s_edge)
     
     wall_data.append({
         "Height z (m)": z, 
-        "Windward-Inward(N/m²)": in_w, 
-        "Leeward-Suction(N/m²)": suc_l, 
-        "Side General-Suction(N/m²)": suc_s, 
-        "Side Edge-Suction(N/m²)": suc_se
+        "Windward-Inward (N/m²)": in_w, 
+        "Leeward-Suction (N/m²)": suc_l, 
+        "Side Middle-Suction (N/m²)": suc_s_mid, 
+        "Side Edge-Suction (N/m²)": suc_s_edge
     })
 
 df_walls_cc = pd.DataFrame(wall_data)
 
-# สำหรับหลังคาก็ใช้ Local Cp* คงที่ตามที่มาตรฐานระบุเช่นกัน
+# สำหรับหลังคา - อ้างอิงตาราง ต.4-5 
 roof_zones = [
-    {"Zone": "General Roof", "Cp": -1.0}, 
-    {"Zone": "Edge Roof", "Cp": -1.5}, 
-    {"Zone": "Corner Roof", "Cp": -2.3}
+    {"Zone": "General", "Cp": -1.0}, 
+    {"Zone": "Edge", "Cp": -1.5}, 
+    {"Zone": "Corner", "Cp": -2.3}
 ]
-roof_data = [{"Roof Zone": r["Zone"], "Max Suction (N/m²)": get_max_net_pressures(I_w * q * Ce_H * Cg_cc * r["Cp"])[1]} for r in roof_zones]
-df_roof_cc = pd.DataFrame(roof_data)
+roof_results = []
+for r in roof_zones:
+    p_ext_r = I_w * q * Ce_H * Cg_cc * r["Cp"]
+    _, suc_r = get_max_net_pressures(p_ext_r)
+    roof_results.append({
+        "Roof Zone": r["Zone"], 
+        "External Pressure (N/m²)": p_ext_r,
+        "Max Net Suction (N/m²)": suc_r
+    })
+df_roof_cc = pd.DataFrame(roof_results)
 
+# ส่วนการแสดงผล
 tab_wall_cc, tab_roof_cc = st.tabs(["🧱 Exterior Walls Design Pressure", "🏠 Roof Design Pressure"])
 with tab_wall_cc: 
     st.dataframe(df_walls_cc.round(1), hide_index=True, use_container_width=True)
     st.markdown("**Net Design Pressures for Exterior Walls (N/m²)**")
-    st.caption("Values represent the worst-case net pressures (External - Internal). Use positive values for inward pressure and negative values for outward suction.")
+    st.caption("Positive values (+) represent compression forces acting toward the wall, while negative values (-) represent suction forces acting away from the wall. All values already account for the effects of internal pressure ($C_{pi}$) for both positive and negative cases.")
+    
 with tab_roof_cc: 
     st.dataframe(df_roof_cc.round(1), hide_index=True, use_container_width=True)
-    st.markdown("**Net Design Pressures for Roof Coverings (N/m²)**")
+    st.markdown("**Net Design Pressures for Roof (N/m²)**")
     st.caption(f"Calculated at Reference Height $H = {H:.2f}$ m. Corner zones apply to an area $0.2D \\times 0.2D$, edge zones apply to width $0.1D$.")
-
-st.write("---")
-
 # ==========================================
 # 9. Serviceability Check (Deflection & Acceleration)
 # ==========================================
