@@ -27,7 +27,7 @@ with inputs:
     
     with col1:
         # เซ็ตค่าเริ่มต้นให้ตรงกับ PDF ตัวอย่างที่ 3 (หน้า 1)
-        Floor = st.number_input(label='Number of Stories', min_value=1, max_value=200, value=55, step=1) 
+        Floor = st.number_input(label='Number of Stories', min_value=1, max_value=200, value=68, step=1) 
         Wx = st.number_input(label='Width parallel to X-axis [m]', min_value=0.0, value=73.0, step=0.1)
         Wy = st.number_input(label='Width parallel to Y-axis [m]', min_value=0.0, value=68.0, step=0.1)
         Ds = min(Wy, Wx)
@@ -42,7 +42,7 @@ with inputs:
         
         init_data = pd.DataFrame({
             "Story": [i+1 for i in range(int(Floor))],
-            "Height (m)": [4.0] * int(Floor), # ใช้ชั้นละ 4ม. รวม 55 ชั้น จะได้ 220ม. พอดี
+            "Height (m)": [4.0] * int(Floor), # ใช้ชั้นละ 4ม. รวม 68 ชั้น จะได้ 272ม. พอดี
         })
         
         edited_df = st.data_editor(init_data, use_container_width=True, hide_index=True)
