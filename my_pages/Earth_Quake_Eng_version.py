@@ -582,9 +582,39 @@ with col1:
 
 st.write('---')
 
-if cal == cal_list[0]: # Equivalent Static Method
+# สร้าง Function ไว้ด้านนอกสุดของ Block เพื่อให้เรียกใช้ได้อย่างปลอดภัย
+def get_sa_at_t(T_input, SDS, SD1, bkk, damping):
+    if not bkk:
+        # T0, Ts ถูกคำนวณไว้แล้วใน Section 8 อิงตาม Global Scope ป้องกัน Error
+        if T_input <= T0:
+            f = interpolate.interp1d([0.0, T0], [0.4*SDS, SDS])
+            sa = float(f(T_input))
+        elif T_input <= Ts:
+            sa = SDS
+        else:
+            sa = SD1 / T_input
+        
+        if damping == '2.5%':
+            sa = sa / 0.85 if T_input >= T0 else SDS * (3.88 * T_input / Ts + 0.4)
+    else:
+        # df_bkk, zone ถูกกำหนดไว้แล้วใน Section 4
+        y0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_input), :].iloc[-1]['Sa']
+        y1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_input), :].iloc[0]['Sa']
+        x0 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']<=T_input), :].iloc[-1]['T']
+        x1 = df_bkk.loc[(df_bkk['zone']==zone) & (df_bkk['T']>=T_input), :].iloc[0]['T']
+        if x0 == x1: sa = y0
+        else:
+            f_log = interpolate.interp1d([np.log10(x0), np.log10(x1)], [np.log10(y0), np.log10(y1)])
+            sa = 10**f_log([np.log10(T_input)])[0]
+    return sa
+
+
+# ==========================================
+# ส่วนแสดงผล: Equivalent Static Method
+# ==========================================
+if cal == cal_list[0]: 
     with st.expander("Show Seismic Design Calculations (Equivalent Static Method)", expanded=False):
-    # Section 9: Base Shear
+        # Section 9: Base Shear
         st.write('### 9. Base Shear, $V$')
         W = Witotal_list[-1] if len(Witotal_list) > 0 else 0
         st.markdown(rf'$Effective \text{{ Seismic }} \text{{ Weight, }} W = {W:.2f} \text{{ tonne}}$')
@@ -646,3 +676,103 @@ if cal == cal_list[0]: # Equivalent Static Method
 
         # Final Dataframe Display
         st.dataframe(eq, hide_index=True, use_container_width=True)
+
+# ==========================================
+# ส่วนแสดงผล: Dynamic Analysis Method
+# ==========================================
+elif cal == cal_list[1]: 
+        st.write('### 11. RSA Scaling Check')
+        with st.expander("Input ETABS Results & Calculate Scale Factor", expanded=True):
+            col_tx, col_ty = st.columns(2)
+            
+            # 1. รับค่าจาก ETABS
+            with col_tx:
+                st.subheader("X-Direction")
+                Tx_etabs = st.number_input("Program Period, $T_x$ (sec)", min_value=0.0, value=T_structure*1.2, step=0.01)
+                Vtx_etabs = st.number_input("RSA Base Shear from Program, $V_{tx}$ (tonne)", min_value=0.0, value=60.0, step=0.1)
+                
+            with col_ty:
+                st.subheader("Y-Direction")
+                Ty_etabs = st.number_input("Program Period, $T_y$ (sec)", min_value=0.0, value=T_structure*1.2, step=0.01)
+                Vty_etabs = st.number_input("RSA Base Shear from Program, $V_{ty}$ (tonne)", min_value=0.0, value=60.0, step=0.1)
+
+            # 2. คำนวณขีดจำกัดคาบ (ตามรูปคือ 1.5 * T_approx)
+            T_limit = 1.5 * T_structure
+            st.info(f"Upper Limit Period for Scaling: $1.5T = 1.5 \\times {T_structure:.3f} = {T_limit:.3f}$ sec")
+
+            # 3. กำหนดคาบที่จะใช้หา Base Shear อ้างอิง (Vx, Vy)
+            T_use_x = min(Tx_etabs, T_limit)
+            T_use_y = min(Ty_etabs, T_limit)
+
+            # 4. หา Sa และ Base Shear อ้างอิง
+            Sax = get_sa_at_t(T_use_x, SDS, SD1, bkk, damping)
+            Say = get_sa_at_t(T_use_y, SDS, SD1, bkk, damping)
+
+            Csx_ = Sax * I / R
+            Csy_ = Say * I / R
+            Csx = max(Csx_, 0.01)
+            Csy = max(Csy_, 0.01)
+
+            # ดึงค่า W มาใช้ในฝั่ง Dynamic
+            W = Witotal_list[-1] if len(Witotal_list) > 0 else 0
+
+            Vx_ref = Csx * W
+            Vy_ref = Csy * W
+
+            # 5. คำนวณ Scale Factor (SF)
+            target_v_x = 0.85 * Vx_ref
+            target_v_y = 0.85 * Vy_ref
+
+            sfx = (target_v_x / Vtx_etabs) if Vtx_etabs < target_v_x else 1.0
+            sfy = (target_v_y / Vty_etabs) if Vty_etabs < target_v_y else 1.0
+
+            st.write("---")
+            st.write("### Calculation Details")
+
+            # 6. แสดงผลลัพธ์พร้อมสมการ
+            res1, res2 = st.columns(2)
+            with res1:
+                st.markdown("**X-Axis Result:**")
+                st.markdown(r"**1. Design Period ($T_{design,x}$):**")
+                st.markdown(r"$T_{design,x} = \min(T_x, 1.5T) = \min(%.3f, %.3f) = %.3f \text{ s}$" % (Tx_etabs, T_limit, T_use_x))
+                
+                st.markdown(r"**2. Seismic Response Coefficient ($C_{sx}$):**")
+                st.markdown(r"$C_{sx} = S_{ax} \left( \frac{I}{R} \right) = %.3f \left( \frac{%.2f}{%.2f} \right) = %.3f \ge 0.01$" % (Sax, I, R, Csx))
+                
+                st.markdown(r"**3. Static Base Shear ($V_{static,x}$):**")
+                st.markdown(r"$V_{static,x} = C_{sx} W = %.3f \times %.2f = %.2f \text{ tonne}$" % (Csx, W, Vx_ref))
+                
+                st.markdown(r"**4. Target Base Shear (85% $V_{static,x}$):**")
+                st.markdown(r"$V_{target,x} = 0.85 \times %.2f = %.2f \text{ tonne}$" % (Vx_ref, target_v_x))
+                
+                st.markdown(r"**5. Scale Factor ($S_{Fx}$):**")
+                if sfx > 1.0:
+                    st.markdown(r"As $V_{tx} (%.2f) < V_{target,x} (%.2f)$ :" % (Vtx_etabs, target_v_x))
+                    st.markdown(r"$S_{Fx} = \frac{V_{target,x}}{V_{tx}} = \frac{%.2f}{%.2f}$" % (target_v_x, Vtx_etabs))
+                    st.error(f"Scale Factor $S_{{Fx}} = {sfx:.3f}$")
+                else:
+                    st.markdown(r"As $V_{tx} (%.2f) \ge V_{target,x} (%.2f)$ :" % (Vtx_etabs, target_v_x))
+                    st.success(f"Scale Factor $S_{{Fx}} = 1.000$ (No scaling required)")
+
+            with res2:
+                st.markdown("**Y-Axis Result:**")
+                st.markdown(r"**1. Design Period ($T_{design,y}$):**")
+                st.markdown(r"$T_{design,y} = \min(T_y, 1.5T) = \min(%.3f, %.3f) = %.3f \text{ s}$" % (Ty_etabs, T_limit, T_use_y))
+                
+                st.markdown(r"**2. Seismic Response Coefficient ($C_{sy}$):**")
+                st.markdown(r"$C_{sy} = S_{ay} \left( \frac{I}{R} \right) = %.3f \left( \frac{%.2f}{%.2f} \right) = %.3f \ge 0.01$" % (Say, I, R, Csy))
+                
+                st.markdown(r"**3. Static Base Shear ($V_{static,y}$):**")
+                st.markdown(r"$V_{static,y} = C_{sy} W = %.3f \times %.2f = %.2f \text{ tonne}$" % (Csy, W, Vy_ref))
+                
+                st.markdown(r"**4. Target Base Shear (85% $V_{static,y}$):**")
+                st.markdown(r"$V_{target,y} = 0.85 \times %.2f = %.2f \text{ tonne}$" % (Vy_ref, target_v_y))
+                
+                st.markdown(r"**5. Scale Factor ($S_{Fy}$):**")
+                if sfy > 1.0:
+                    st.markdown(r"As $V_{ty} (%.2f) < V_{target,y} (%.2f)$ :" % (Vty_etabs, target_v_y))
+                    st.markdown(r"$S_{Fy} = \frac{V_{target,y}}{V_{ty}} = \frac{%.2f}{%.2f}$" % (target_v_y, Vty_etabs))
+                    st.error(f"Scale Factor $S_{{Fy}} = {sfy:.3f}$")
+                else:
+                    st.markdown(r"As $V_{ty} (%.2f) \ge V_{target,y} (%.2f)$ :" % (Vty_etabs, target_v_y))
+                    st.success(f"Scale Factor $S_{{Fy}} = 1.000$ (No scaling required)")
