@@ -577,8 +577,8 @@ def response_spectrum_plot(T_data, S_data, t_struct, sa_struct, is_bkk):
 col1, col2 = st.columns([0.7, 0.3])
 with col1:
     st.plotly_chart(response_spectrum_plot(T_data, S_data, T_structure, Sa_structure, bkk), theme=None, use_container_width=True)
-    # st.write(r'Period of structure, $T = %.3f \mathrm{~sec}$'%(T_structure))
-    # st.write(r'Acceleration of structure, $S_a = %.3f \mathrm{~g}$'%(Sa_structure))
+    st.write(r'Period of structure, $T = %.3f \mathrm{~sec}$'%(T_structure))
+    st.write(r'Acceleration of structure, $S_a = %.3f \mathrm{~g}$'%(Sa_structure))
 
 st.write('---')
 
@@ -613,8 +613,6 @@ def get_sa_at_t(T_input, SDS, SD1, bkk, damping):
 # ส่วนแสดงผล: Equivalent Static Method
 # ==========================================
 if cal == cal_list[0]: 
-    st.write(r'Period of structure, $T = %.3f \mathrm{~sec}$'%(T_structure))
-    st.write(r'Acceleration of structure, $S_a = %.3f \mathrm{~g}$'%(Sa_structure))
     with st.expander("Show Seismic Design Calculations (Equivalent Static Method)", expanded=False):
         # Section 9: Base Shear
         st.write('### 9. Base Shear, $V$')
