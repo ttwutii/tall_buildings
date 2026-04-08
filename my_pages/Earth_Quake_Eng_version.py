@@ -865,7 +865,7 @@ elif cal == cal_list[1]:
         with st.expander("📍 Export Modified Spectrum Points for ETABS (Period vs Sa)", expanded=False):
             st.markdown("""
             **How to Use:**
-            1. **Copy** the data from the table below and paste it into **Excel**.
+            1. You can **copy** the data from the table below .
             2. In **ETABS**, go to `Define > Functions > Response Spectrum > User Defined`
             3. Input the **Period** and **Acceleration** values into the software table.
             """)
