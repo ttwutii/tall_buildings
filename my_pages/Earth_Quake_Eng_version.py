@@ -785,10 +785,11 @@ elif cal == cal_list[1]:
         # 12. Modified Response Spectrum (Step-Function Logic)
         # ==========================================
         st.write("---")
-        st.write("### Modified Response Spectrum for Member Design")
+        st.write("### Modified Response Spectrum")
+        st.caption("##### For designing Individual Members")
         st.info(r"""
         **Modified RSA Logic:**
-        - **Mode 1** ($T \ge T_1$): Reduce forces by multiplying with factor $\frac{{S_F \times \Omega_0}}{{R}}$
+        - **Mode 1** ($T \ge T_1$): Multiplying with factor $\frac{{S_F \times \Omega_0}}{{R}}$
         - **Mode 2, 3, ...** ($T < T_1$): Use original standard acceleration values (Original $S_a$)
         """)
 
