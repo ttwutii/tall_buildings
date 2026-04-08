@@ -776,3 +776,121 @@ elif cal == cal_list[1]:
             else:
                 st.markdown(r"As $V_{ty} (%.2f) \ge V_{target,y} (%.2f)$ :" % (Vty_etabs, target_v_y))
                 st.success(f"Scale Factor $S_{{Fy}} = 1.000$ (No scaling required)")
+        
+
+        # ==========================================
+        # Modified Response Spectrum for Member Design
+        # ==========================================
+        # ==========================================
+        # 12. Modified Response Spectrum (Step-Function Logic)
+        # ==========================================
+        st.write("---")
+        st.write("### Modified Response Spectrum for Member Design")
+        st.info(r"""
+        **Modified RSA Logic:**
+        - **Mode 1** ($T \ge T_1$): Reduce forces by multiplying with factor $\frac{{S_F \times \Omega_0}}{{R}}$
+        - **Mode 2, 3, ...** ($T < T_1$): Use original standard acceleration values (Original $S_a$)
+        """)
+
+        # คำนวณ Factor สำหรับคูณลด
+        mod_factor_x = (sfx * omega0) / R
+        mod_factor_y = (sfy * omega0) / R
+
+        # --- สร้างข้อมูลกราฟแบบ Conditional (แบ่งช่วง T) ---
+        # สำหรับ X
+        S_data_mod_x = np.where(T_data < Tx_etabs, S_data, S_data * mod_factor_x)
+        # สำหรับ Y
+        S_data_mod_y = np.where(T_data < Ty_etabs, S_data, S_data * mod_factor_y)
+
+        # ฟังก์ชันพล็อตกราฟเปรียบเทียบแบบ Modified
+        def modified_spectrum_plot(T_data, S_orig, S_mod, direction, t_etabs, m_factor):
+            fig = go.Figure()
+            
+            # 1. เส้นเดิม (Original Sa)
+            fig.add_trace(go.Scatter(x=T_data, y=S_orig, name='Design Spectrum (Original)', 
+                                     line=dict(color='blue', width=1.5, dash='dot')))
+            
+            # 2. เส้นใหม่ (Modified Sa - มีรอยหยักที่ T1)
+            fig.add_trace(go.Scatter(x=T_data, y=S_mod, name=f'Modified Spectrum {direction}', 
+                                     line=dict(color='red', width=2.5)))
+            
+            # 3. เส้นดิ่งแสดงตำแหน่ง T1 (Building Period)
+            fig.add_trace(go.Scatter(x=[t_etabs, t_etabs], y=[0, max(S_orig)], 
+                                     name=f'Building Period T1 = {t_etabs:.3f}s',
+                                     line=dict(color='black', width=1, dash='dash'),
+                                     hoverinfo='skip'))
+                
+            fig.update_layout(
+                title=f"Modified Spectrum {direction}-Direction (T1 = {t_etabs:.3f} s)",
+                xaxis=dict(title='T (second)', range=[0.0, 3.0]), # ซูมช่วงต้นให้เห็นรอยต่อชัดๆ
+                yaxis=dict(title='Acceleration (g)'),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                margin=dict(t=100, b=40), height=450
+            )
+            
+            if bkk:
+                fig.update_xaxes(type="log", range=[np.log10(0.01), np.log10(10)])
+                fig.update_yaxes(type="log", range=[np.log10(0.001), np.log10(1)])
+                
+            return fig
+
+        # แสดงผลกราฟแยก X และ Y
+        m_col1, m_col2 = st.columns(2)
+            
+        with m_col1:
+            st.markdown(f"**X-Direction Modification Details**")
+            st.markdown(rf"""
+             $T < {Tx_etabs:.3f}$ s: $S_{{a,mod}} = S_a$  
+             $T \ge {Tx_etabs:.3f}$ s: $S_{{a,mod}} = S_a \times {mod_factor_x:.3f}$
+            """)
+            st.plotly_chart(modified_spectrum_plot(T_data, S_data, S_data_mod_x, "X", Tx_etabs, mod_factor_x))
+
+        with m_col2:
+            st.markdown(f"**Y-Direction Modification Details**")
+            st.markdown(rf"""
+             $T < {Ty_etabs:.3f}$ s: $S_{{a,mod}} = S_a$  
+             $T \ge {Ty_etabs:.3f}$ s: $S_{{a,mod}} = S_a \times {mod_factor_y:.3f}$
+            """)
+            st.plotly_chart(modified_spectrum_plot(T_data, S_data, S_data_mod_y, "Y", Ty_etabs, mod_factor_y))
+
+        st.info(r" **Important Note:** Red graph is the modified spectrum to be used for member design. When creating 'User Defined' Response Spectrum Function in ETABS, input the modified values accordingly for X and Y directions.")
+        
+        st.warning("⚠️  When using this Modified Spectrum for Member Design, remember to apply the Importance Factor ($I$) in your Load Combinations as per the standard requirements.")    
+        
+        # ==========================================
+        #  Export Data Points for ETABS (User Defined Function)
+        # ==========================================
+        st.write("---")
+        with st.expander("📍 Export Modified Spectrum Points for ETABS (Period vs Sa)", expanded=False):
+            st.markdown("""
+            **How to Use:**
+            1. **Copy** the data from the table below and paste it into **Excel**.
+            2. In **ETABS**, go to `Define > Functions > Response Spectrum > User Defined`
+            3. Input the **Period** and **Acceleration** values into the software table.
+            """)
+            
+            # เตรียม Dataframe สำหรับการ Export
+            export_x = pd.DataFrame({
+                "Period T (sec)": T_data,
+                "Sa_mod_X (g)": S_data_mod_x
+            }).round(6)
+
+            export_y = pd.DataFrame({
+                "Period T (sec)": T_data,
+                "Sa_mod_Y (g)": S_data_mod_y
+            }).round(6)
+
+            col_exp_x, col_exp_y = st.columns(2)
+            
+            with col_exp_x:
+                st.subheader("X-Direction Data")
+                st.dataframe(export_x, hide_index=True, use_container_width=True)
+                # เพิ่มปุ่มดาวน์โหลดเป็น CSV (เผื่อกรณีข้อมูลเยอะ)
+                csv_x = export_x.to_csv(index=False).encode('utf-8')
+                st.download_button("Download X-Spectrum CSV", data=csv_x, file_name='modified_spectrum_X.csv', mime='text/csv')
+
+            with col_exp_y:
+                st.subheader("Y-Direction Data")
+                st.dataframe(export_y, hide_index=True, use_container_width=True)
+                csv_y = export_y.to_csv(index=False).encode('utf-8')
+                st.download_button("Download Y-Spectrum CSV", data=csv_y, file_name='modified_spectrum_Y.csv', mime='text/csv')
